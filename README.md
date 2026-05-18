@@ -1,7 +1,6 @@
 # NCKit Sample — iOS
 
 > Reference iOS app for the **NCKit** noise-cancellation framework.
-> Built by [**5Exceptions**](https://5exceptions.com).
 
 A clean, copy-paste-friendly demo of how to integrate
 [**NCKit**](https://github.com/5Exceptions-Mobile-Team/NCKit) into a SwiftUI app.
@@ -242,12 +241,4 @@ Make sure the source video has an audio track. The sample throws
 The sample app source in this repository is released under the **MIT License**
 so you can copy it freely into your own projects.
 
-`NCKit.xcframework` is distributed under a separate commercial license.
-Contact [sdk@5exceptions.com](mailto:sdk@5exceptions.com) for production
-licensing terms.
-
 ---
-
-<p align="center">
-  Built by <a href="https://5exceptions.com"><b>5Exceptions</b></a> · Powered by NCKit
-</p>
