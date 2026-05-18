@@ -231,8 +231,6 @@ Make sure the source video has an audio track. The sample throws
 - **NCKit documentation** — [docs.nckit.io](https://docs.nckit.io)
 - **NCKit framework repo** — [github.com/5Exceptions-Mobile-Team/NCKit](https://github.com/5Exceptions-Mobile-Team/NCKit)
 - **This sample** — [github.com/5Exceptions-Mobile-Team/NCKit_Demo](https://github.com/5Exceptions-Mobile-Team/NCKit_Demo)
-- **5Exceptions** — [5exceptions.com](https://5exceptions.com)
-- **Sales / licensing** — [sdk@5exceptions.com](mailto:sdk@5exceptions.com)
 
 ---
 
