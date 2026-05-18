@@ -1,0 +1,15 @@
+{
+  "originHash" : "36fdcd314a89e2167b3fa75f6c57d3de06b5c726219799c2e055f26b7cdc392b",
+  "pins" : [
+    {
+      "identity" : "nckit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/5Exceptions-Mobile-Team/NCKit.git",
+      "state" : {
+        "revision" : "d5ffd7768e1177028bb7f127a86ef452dfbde00f",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}

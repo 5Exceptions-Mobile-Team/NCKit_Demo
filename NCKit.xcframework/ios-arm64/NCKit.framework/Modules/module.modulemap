@@ -1,0 +1,5 @@
+framework module NCKit {
+    umbrella header "NCKit.h"
+    export *
+    module * { export * }
+}

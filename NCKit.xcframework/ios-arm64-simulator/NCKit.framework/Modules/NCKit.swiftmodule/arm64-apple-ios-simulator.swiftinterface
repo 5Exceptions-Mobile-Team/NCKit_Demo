@@ -1,0 +1,42 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3 effective-5.10 (swiftlang-6.3.0.123.5 clang-2100.0.123.102)
+// swift-module-flags: -target arm64-apple-ios16.0-simulator -enable-objc-interop -enable-library-evolution -O -module-name NCKit
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3
+import AVFoundation
+import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public enum DFN3AudioNormalizer {
+  public static func applySpeechGatedMakeupGain(_ samples: inout [Swift.Float], sampleRate: Swift.Int, targetRmsDbfs: Swift.Float = -18, maxGainDb: Swift.Float = 15, peakCeilingDbfs: Swift.Float = -1)
+  public static func softLimitInPlace(_ samples: inout [Swift.Float], peakCeilingDbfs: Swift.Float = -1)
+}
+public enum DFN3Error : Swift.Error, Swift.Sendable {
+  case missingModel(Swift.String)
+  case libraryInit
+  case badFrameLength(Swift.Int)
+  case cannotOpenInput
+  case cannotCreateOutput
+  case unsupportedFormat
+  case resampleFailed
+}
+public enum DFN3FileProcessor {
+  public static let targetSampleRate: Swift.Double
+  public static func processFile(inputURL: Foundation.URL, outputURL: Foundation.URL, processor: NCKit.LibDFProcessor) throws
+}
+public enum DFN3ModelLocator {
+  public static var defaultBundle: Foundation.Bundle {
+    get
+  }
+  public static func modelTarGzURL(bundle: Foundation.Bundle = defaultBundle) throws -> Foundation.URL
+}
+final public class LibDFProcessor {
+  final public let frameLength: Swift.Int
+  public init(modelURL: Foundation.URL, attenLimDb: Swift.Float = 100, postFilterBeta: Swift.Float = 0) throws
+  @discardableResult
+  final public func processFrame(input: Swift.UnsafeMutablePointer<Swift.Float>, output: Swift.UnsafeMutablePointer<Swift.Float>) -> Swift.Float
+  final public func setAttenLim(_ db: Swift.Float)
+  final public func setPostFilterBeta(_ b: Swift.Float)
+  @objc deinit
+}

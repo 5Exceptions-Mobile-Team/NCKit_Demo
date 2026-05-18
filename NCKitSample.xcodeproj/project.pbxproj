@@ -1,0 +1,364 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		18F8EE752FBAF9800014461A /* NCKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F8EE742FBAF9800014461A /* NCKit */; };
+		A10001 /* NCKitSampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* NCKitSampleApp.swift */; };
+		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* ContentView.swift */; };
+		A10003 /* MicrophoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* MicrophoneView.swift */; };
+		A10004 /* HowToUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004 /* HowToUseView.swift */; };
+		A10005 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005 /* Theme.swift */; };
+		A10009 /* AudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009 /* AudioEngine.swift */; };
+		A10011 /* WavWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011 /* WavWriter.swift */; };
+		A10020 /* VideoProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020 /* VideoProcessor.swift */; };
+		A10021 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021 /* WaveformGenerator.swift */; };
+		A10022 /* VideoImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022 /* VideoImportView.swift */; };
+		A10023 /* ComparisonPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* ComparisonPlayerView.swift */; };
+		A10024 /* MediaPickerWrappers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* MediaPickerWrappers.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10000 /* NCKitSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NCKitSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10001 /* NCKitSampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCKitSampleApp.swift; sourceTree = "<group>"; };
+		B10002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B10003 /* MicrophoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneView.swift; sourceTree = "<group>"; };
+		B10004 /* HowToUseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToUseView.swift; sourceTree = "<group>"; };
+		B10005 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B10009 /* AudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngine.swift; sourceTree = "<group>"; };
+		B10011 /* WavWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WavWriter.swift; sourceTree = "<group>"; };
+		B10014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10020 /* VideoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProcessor.swift; sourceTree = "<group>"; };
+		B10021 /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
+		B10022 /* VideoImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportView.swift; sourceTree = "<group>"; };
+		B10023 /* ComparisonPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonPlayerView.swift; sourceTree = "<group>"; };
+		B10024 /* MediaPickerWrappers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPickerWrappers.swift; sourceTree = "<group>"; };
+		LD200F1 /* NCKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = NCKit.xcframework; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18F8EE752FBAF9800014461A /* NCKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CF0797799182FF4D7C36F3EF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				LD200F1 /* NCKit.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D10000 = {
+			isa = PBXGroup;
+			children = (
+				D10001 /* NCKitSample */,
+				D10099 /* Products */,
+				CF0797799182FF4D7C36F3EF /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		D10001 /* NCKitSample */ = {
+			isa = PBXGroup;
+			children = (
+				B10001 /* NCKitSampleApp.swift */,
+				B10014 /* Info.plist */,
+				D10002 /* UI */,
+				D10005 /* Audio */,
+			);
+			path = NCKitSample;
+			sourceTree = "<group>";
+		};
+		D10002 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B10005 /* Theme.swift */,
+				B10002 /* ContentView.swift */,
+				B10003 /* MicrophoneView.swift */,
+				B10022 /* VideoImportView.swift */,
+				B10023 /* ComparisonPlayerView.swift */,
+				B10004 /* HowToUseView.swift */,
+				D10007 /* Helpers */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		D10005 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				B10009 /* AudioEngine.swift */,
+				B10011 /* WavWriter.swift */,
+				B10020 /* VideoProcessor.swift */,
+				B10021 /* WaveformGenerator.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		D10007 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				B10024 /* MediaPickerWrappers.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		D10099 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B10000 /* NCKitSample.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E10001 /* NCKitSample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F10003 /* Build configuration list for PBXNativeTarget "NCKitSample" */;
+			buildPhases = (
+				C10000 /* Sources */,
+				C10001 /* Frameworks */,
+				C10002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NCKitSample;
+			productName = NCKitSample;
+			productReference = B10000 /* NCKitSample.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		G10001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					E10001 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = F10001 /* Build configuration list for PBXProject "NCKitSample" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D10000;
+			packageReferences = (
+				18F8EE732FBAF9800014461A /* XCRemoteSwiftPackageReference "NCKit" */,
+			);
+			productRefGroup = D10099 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E10001 /* NCKitSample */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C10002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C10000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001 /* NCKitSampleApp.swift in Sources */,
+				A10002 /* ContentView.swift in Sources */,
+				A10003 /* MicrophoneView.swift in Sources */,
+				A10004 /* HowToUseView.swift in Sources */,
+				A10005 /* Theme.swift in Sources */,
+				A10009 /* AudioEngine.swift in Sources */,
+				A10011 /* WavWriter.swift in Sources */,
+				A10020 /* VideoProcessor.swift in Sources */,
+				A10021 /* WaveformGenerator.swift in Sources */,
+				A10022 /* VideoImportView.swift in Sources */,
+				A10023 /* ComparisonPlayerView.swift in Sources */,
+				A10024 /* MediaPickerWrappers.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F10010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F10011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F10020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AKRSR3D9R9;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NCKitSample/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "NCKit Sample";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fiveexceptions.nckitsample;
+				PRODUCT_NAME = NCKitSample;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F10021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AKRSR3D9R9;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NCKitSample/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "NCKit Sample";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fiveexceptions.nckitsample;
+				PRODUCT_NAME = NCKitSample;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F10001 /* Build configuration list for PBXProject "NCKitSample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F10010 /* Debug */,
+				F10011 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F10003 /* Build configuration list for PBXNativeTarget "NCKitSample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F10020 /* Debug */,
+				F10021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		18F8EE732FBAF9800014461A /* XCRemoteSwiftPackageReference "NCKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/5Exceptions-Mobile-Team/NCKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18F8EE742FBAF9800014461A /* NCKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18F8EE732FBAF9800014461A /* XCRemoteSwiftPackageReference "NCKit" */;
+			productName = NCKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = G10001 /* Project object */;
+}
