@@ -2,19 +2,14 @@
 //  ContentView.swift
 //  NCKit Sample — built by 5Exceptions
 //
-//  Root tab view. Each tab demonstrates a different NCKit integration:
-//    • Microphone — real-time per-frame processing with LibDFProcessor
-//    • Video      — offline file processing with DFN3FileProcessor
-//    • How to Use — code snippets to copy into your own app
-//
 
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
         TabView {
-            MicrophoneView()
-                .tabItem { Label("Microphone", systemImage: "mic.fill") }
+            AudioView()
+                .tabItem { Label("Audio", systemImage: "waveform") }
 
             VideoImportView()
                 .tabItem { Label("Video", systemImage: "video.fill") }

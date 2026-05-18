@@ -21,6 +21,9 @@ struct ComparisonPlayerView: View {
     @State private var originalPlayer: AVPlayer?
     @State private var enhancedPlayer: AVPlayer?
     @State private var timeObserver: Any?
+    @State private var observedPlayer: AVPlayer?
+    @State private var showExportOriginal = false
+    @State private var showExportEnhanced = false
 
     private var originalWaveform: [WaveformGenerator.WaveformPoint] { result.originalWaveform }
     private var enhancedWaveform: [WaveformGenerator.WaveformPoint] { result.enhancedWaveform }
@@ -57,8 +60,11 @@ struct ComparisonPlayerView: View {
         }
         .navigationTitle("Compare A/B")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .onAppear(perform: setupPlayers)
+        .glassNavigationChrome()
+        .onAppear {
+            configurePlaybackSession()
+            setupPlayers()
+        }
         .onDisappear(perform: teardownPlayers)
     }
 
@@ -255,8 +261,28 @@ struct ComparisonPlayerView: View {
 
     private var actionsSection: some View {
         VStack(spacing: 12) {
+            Text("Export")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 10) {
+                videoActionButton(
+                    title: "Original",
+                    color: AITheme.violet,
+                    shareURL: result.originalVideoURL,
+                    saveAction: { showExportOriginal = true }
+                )
+                videoActionButton(
+                    title: "Enhanced",
+                    color: AITheme.cyan,
+                    shareURL: result.enhancedVideoURL,
+                    saveAction: { showExportEnhanced = true }
+                )
+            }
+
             Button(action: onSave) {
-                Label("Save Enhanced Video", systemImage: "square.and.arrow.down")
+                Label("Save Enhanced to Photos", systemImage: "photo")
                     .font(.headline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -265,64 +291,115 @@ struct ComparisonPlayerView: View {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(AITheme.aiGradient)
                     )
-                    .shadow(color: AITheme.cyan.opacity(0.4), radius: 12, x: 0, y: 6)
             }
+        }
+        .sheet(isPresented: $showExportOriginal) {
+            DocumentExportPicker(url: result.originalVideoURL)
+        }
+        .sheet(isPresented: $showExportEnhanced) {
+            DocumentExportPicker(url: result.enhancedVideoURL)
+        }
+    }
 
-            if let url = result.enhancedVideoURL as URL? {
-                ShareLink(item: url) {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .font(.headline)
+    private func videoActionButton(
+        title: String,
+        color: Color,
+        shareURL: URL,
+        saveAction: @escaping () -> Void
+    ) -> some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundColor(color)
+            HStack(spacing: 8) {
+                ShareLink(item: shareURL) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.body)
                         .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(AITheme.cyan.opacity(0.3), lineWidth: 1)
-                        )
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(color.opacity(0.2)))
+                }
+                Button(action: saveAction) {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.body)
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(color.opacity(0.2)))
                 }
             }
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
     }
 
     // MARK: - Player logic
 
+    private func configurePlaybackSession() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+        try? AVAudioSession.sharedInstance().setActive(true)
+    }
+
     private func setupPlayers() {
         originalPlayer = AVPlayer(url: result.originalVideoURL)
         enhancedPlayer = AVPlayer(url: result.enhancedVideoURL)
-
-        originalPlayer?.isMuted = (activeTrack != .original)
-        enhancedPlayer?.isMuted = (activeTrack != .enhanced)
-
-        let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
-        timeObserver = enhancedPlayer?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
-            guard !isSeeking else { return }
-            currentTime = time.seconds
-        }
+        updateMuteState()
+        attachTimeObserver()
     }
 
     private func teardownPlayers() {
-        if let obs = timeObserver { enhancedPlayer?.removeTimeObserver(obs) }
+        removeTimeObserver()
         originalPlayer?.pause()
         enhancedPlayer?.pause()
         originalPlayer = nil
         enhancedPlayer = nil
     }
 
+    private func attachTimeObserver() {
+        removeTimeObserver()
+        guard let player = activePlayer else { return }
+        let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+            guard !isSeeking else { return }
+            currentTime = time.seconds.isFinite ? time.seconds : 0
+        }
+        observedPlayer = player
+    }
+
+    private func removeTimeObserver() {
+        if let obs = timeObserver, let player = observedPlayer {
+            player.removeTimeObserver(obs)
+        }
+        timeObserver = nil
+        observedPlayer = nil
+    }
+
+    private func updateMuteState() {
+        originalPlayer?.isMuted = (activeTrack != .original)
+        enhancedPlayer?.isMuted = (activeTrack != .enhanced)
+    }
+
     private func switchTrack(to track: TrackSelection) {
         guard track != activeTrack else { return }
         let wasPlaying = isPlaying
-        if wasPlaying { activePlayer?.pause() }
+        if wasPlaying {
+            originalPlayer?.pause()
+            enhancedPlayer?.pause()
+        }
 
+        removeTimeObserver()
         activeTrack = track
-        originalPlayer?.isMuted = (track != .original)
-        enhancedPlayer?.isMuted = (track != .enhanced)
+        updateMuteState()
 
         let time = CMTime(seconds: currentTime, preferredTimescale: 600)
-        activePlayer?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        originalPlayer?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        enhancedPlayer?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+
+        attachTimeObserver()
+
         if wasPlaying { activePlayer?.play() }
     }
 

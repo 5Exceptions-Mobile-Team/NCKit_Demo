@@ -19,19 +19,19 @@ struct HowToUseView: View {
 
                         SnippetCard(
                             title: "1. Locate the bundled model",
-                            text: "NCKit ships the DeepFilterNet3 model inside the xcframework. DFN3ModelLocator returns a usable URL — no path required.",
+                            text: "NCKit ships the NCKit model inside the xcframework. NCKitModelLocator returns a usable URL — no path required.",
                             code: """
                             import NCKit
 
-                            let modelURL = try DFN3ModelLocator.modelTarGzURL()
+                            let modelURL = try NCKitModelLocator.modelTarGzURL()
                             """
                         )
 
                         SnippetCard(
                             title: "2. Create the processor once",
-                            text: "LibDFProcessor holds the GRU state and the loaded model. Create it once on a background thread and reuse it.",
+                            text: "NCKitProcessor holds the GRU state and the loaded model. Create it once on a background thread and reuse it.",
                             code: """
-                            let processor = try LibDFProcessor(
+                            let processor = try NCKitProcessor(
                                 modelURL: modelURL,
                                 attenLimDb: 100,      // 100 = unlimited
                                 postFilterBeta: 0     // 0 = off (CLI default)
@@ -60,9 +60,9 @@ struct HowToUseView: View {
 
                         SnippetCard(
                             title: "4. Offline file processing",
-                            text: "DFN3FileProcessor streams the whole file in one call. Works for any AVFoundation-readable input.",
+                            text: "NCKitFileProcessor streams the whole file in one call. Works for any AVFoundation-readable input.",
                             code: """
-                            try DFN3FileProcessor.processFile(
+                            try NCKitFileProcessor.processFile(
                                 inputURL:  noisyFile,
                                 outputURL: cleanFile,
                                 processor: processor
@@ -72,11 +72,11 @@ struct HowToUseView: View {
 
                         SnippetCard(
                             title: "5. Loudness normalization",
-                            text: "After denoising, speech can sound quieter. DFN3AudioNormalizer applies speech-gated makeup gain with a tanh soft limiter.",
+                            text: "After denoising, speech can sound quieter. NCKitAudioNormalizer applies speech-gated makeup gain with a tanh soft limiter.",
                             code: """
                             var samples: [Float] = readSamples()
 
-                            DFN3AudioNormalizer.applySpeechGatedMakeupGain(
+                            NCKitAudioNormalizer.applySpeechGatedMakeupGain(
                                 &samples,
                                 sampleRate: 48_000,
                                 targetRmsDbfs: -18
@@ -86,13 +86,13 @@ struct HowToUseView: View {
 
                         SnippetCard(
                             title: "6. Handle errors",
-                            text: "Every NCKit operation throws DFN3Error — a typed, Sendable enum. Catch the cases that matter.",
+                            text: "Every NCKit operation throws NCKitError — a typed, Sendable enum. Catch the cases that matter.",
                             code: """
                             do {
-                                let processor = try LibDFProcessor(modelURL: modelURL)
-                            } catch DFN3Error.missingModel(let name) {
+                                let processor = try NCKitProcessor(modelURL: modelURL)
+                            } catch NCKitError.missingModel(let name) {
                                 print("Model not embedded: \\(name)")
-                            } catch DFN3Error.libraryInit {
+                            } catch NCKitError.libraryInit {
                                 print("Engine init failed")
                             } catch {
                                 print(error)
@@ -108,7 +108,7 @@ struct HowToUseView: View {
             }
             .navigationTitle("How to Use NCKit")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .glassNavigationChrome()
         }
     }
 

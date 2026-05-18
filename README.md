@@ -13,8 +13,8 @@ Use it as a working reference, or as a starting template for your own product.
 
 | Tab | What it shows | NCKit APIs used |
 |-----|---------------|-----------------|
-| **Microphone** | Real-time mic noise cancellation, A/B recording, live meters, processing stats | `LibDFProcessor`, `DFN3ModelLocator` |
-| **Video** | Pick a video, denoise its audio, A/B compare, save to Photos | `DFN3FileProcessor`, `DFN3AudioNormalizer`, `LibDFProcessor` |
+| **Microphone** | Real-time mic noise cancellation, A/B recording, live meters, processing stats | `NCKitProcessor`, `NCKitModelLocator` |
+| **Video** | Pick a video, denoise its audio, A/B compare, save to Photos | `NCKitFileProcessor`, `NCKitAudioNormalizer`, `NCKitProcessor` |
 | **How to Use** | Six copy-paste snippets that mirror exactly what the other tabs do | every public API in NCKit |
 
 Visual design matches the [NCKit documentation site](https://docs.nckit.io) — dark
@@ -42,8 +42,8 @@ KrispyiOS/
     ├── NCKitSampleApp.swift    ← Entry point, dark theme + accent
     ├── Info.plist
     ├── Audio/
-    │   ├── AudioEngine.swift       ← AVAudioEngine + LibDFProcessor (real-time)
-    │   ├── VideoProcessor.swift    ← DFN3FileProcessor (offline file)
+    │   ├── AudioEngine.swift       ← AVAudioEngine + NCKitProcessor (real-time)
+    │   ├── VideoProcessor.swift    ← NCKitFileProcessor (offline file)
     │   ├── WaveformGenerator.swift
     │   └── WavWriter.swift
     └── UI/
@@ -74,7 +74,7 @@ open NCKitSample.xcodeproj
 3. Connect a device and hit **⌘R**.
 
 That's it — no `pod install`, no `xcframework` build step, no model download.
-The `.xcframework` already embeds the DeepFilterNet3 model.
+The `.xcframework` already embeds the NCKit model.
 
 ---
 
@@ -93,13 +93,13 @@ Drag `NCKit.xcframework` into Xcode → **Frameworks, Libraries, and Embedded Co
 ```swift
 import NCKit
 
-let modelURL = try DFN3ModelLocator.modelTarGzURL()
+let modelURL = try NCKitModelLocator.modelTarGzURL()
 ```
 
 ### 3. Create the processor once
 
 ```swift
-let processor = try LibDFProcessor(
+let processor = try NCKitProcessor(
     modelURL: modelURL,
     attenLimDb: 100,      // 100 = unlimited
     postFilterBeta: 0     // 0 = off (CLI default)
@@ -129,7 +129,7 @@ input.withUnsafeMutableBufferPointer { ib in
 ### 5. Offline file processing
 
 ```swift
-try DFN3FileProcessor.processFile(
+try NCKitFileProcessor.processFile(
     inputURL:  noisyFile,
     outputURL: cleanFile,
     processor: processor
@@ -144,7 +144,7 @@ makeup gain:
 ```swift
 var samples: [Float] = readSamples()
 
-DFN3AudioNormalizer.applySpeechGatedMakeupGain(
+NCKitAudioNormalizer.applySpeechGatedMakeupGain(
     &samples,
     sampleRate: 48_000,
     targetRmsDbfs: -18
@@ -153,14 +153,14 @@ DFN3AudioNormalizer.applySpeechGatedMakeupGain(
 
 ### 7. Typed error handling
 
-Every NCKit operation throws `DFN3Error` — a `Sendable` enum.
+Every NCKit operation throws `NCKitError` — a `Sendable` enum.
 
 ```swift
 do {
-    let processor = try LibDFProcessor(modelURL: modelURL)
-} catch DFN3Error.missingModel(let name) {
+    let processor = try NCKitProcessor(modelURL: modelURL)
+} catch NCKitError.missingModel(let name) {
     print("Model not embedded: \(name)")
-} catch DFN3Error.libraryInit {
+} catch NCKitError.libraryInit {
     print("Engine init failed")
 } catch {
     print(error)
@@ -192,14 +192,14 @@ Measured on iPhone 15 Pro (arm64):
 | Per-frame denoise (10 ms hop) | ~0.4 ms |
 | File processing | ~5–10× real-time |
 
-The model is loaded once per `LibDFProcessor` instance. Reuse the processor —
+The model is loaded once per `NCKitProcessor` instance. Reuse the processor —
 don't recreate it per chunk.
 
 ---
 
 ## Privacy
 
-- All inference runs locally with the bundled DeepFilterNet3 ONNX model.
+- All inference runs locally with the bundled NCKit ONNX model.
 - No network calls, no analytics, no telemetry.
 - Audio buffers never leave the device.
 - Recordings are stored in the app's temp directory and shared via `ShareLink`

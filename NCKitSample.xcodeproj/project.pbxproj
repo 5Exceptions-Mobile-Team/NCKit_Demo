@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		18F8EE752FBAF9800014461A /* NCKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F8EE742FBAF9800014461A /* NCKit */; };
+		18F8EE872FBB2B700014461A /* NCKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F8EE862FBB2B700014461A /* NCKit */; };
 		A10001 /* NCKitSampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* NCKitSampleApp.swift */; };
 		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* ContentView.swift */; };
-		A10003 /* MicrophoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* MicrophoneView.swift */; };
+		A10003 /* AudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* AudioView.swift */; };
 		A10004 /* HowToUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004 /* HowToUseView.swift */; };
 		A10005 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005 /* Theme.swift */; };
 		A10009 /* AudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009 /* AudioEngine.swift */; };
@@ -20,13 +20,16 @@
 		A10022 /* VideoImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022 /* VideoImportView.swift */; };
 		A10023 /* ComparisonPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* ComparisonPlayerView.swift */; };
 		A10024 /* MediaPickerWrappers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* MediaPickerWrappers.swift */; };
+		A10025 /* WavPlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* WavPlaybackController.swift */; };
+		A10026 /* DocumentExportPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* DocumentExportPicker.swift */; };
+		A10027 /* RecordingTrackRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10027 /* RecordingTrackRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		B10000 /* NCKitSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NCKitSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10001 /* NCKitSampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCKitSampleApp.swift; sourceTree = "<group>"; };
 		B10002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		B10003 /* MicrophoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneView.swift; sourceTree = "<group>"; };
+		B10003 /* AudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioView.swift; sourceTree = "<group>"; };
 		B10004 /* HowToUseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToUseView.swift; sourceTree = "<group>"; };
 		B10005 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B10009 /* AudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngine.swift; sourceTree = "<group>"; };
@@ -37,7 +40,9 @@
 		B10022 /* VideoImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportView.swift; sourceTree = "<group>"; };
 		B10023 /* ComparisonPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonPlayerView.swift; sourceTree = "<group>"; };
 		B10024 /* MediaPickerWrappers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPickerWrappers.swift; sourceTree = "<group>"; };
-		LD200F1 /* NCKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = NCKit.xcframework; sourceTree = "<group>"; };
+		B10025 /* WavPlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WavPlaybackController.swift; sourceTree = "<group>"; };
+		B10026 /* DocumentExportPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExportPicker.swift; sourceTree = "<group>"; };
+		B10027 /* RecordingTrackRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingTrackRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,7 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18F8EE752FBAF9800014461A /* NCKit in Frameworks */,
+				18F8EE872FBB2B700014461A /* NCKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,7 +60,6 @@
 		CF0797799182FF4D7C36F3EF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				LD200F1 /* NCKit.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -85,10 +89,11 @@
 			children = (
 				B10005 /* Theme.swift */,
 				B10002 /* ContentView.swift */,
-				B10003 /* MicrophoneView.swift */,
+				B10003 /* AudioView.swift */,
 				B10022 /* VideoImportView.swift */,
 				B10023 /* ComparisonPlayerView.swift */,
 				B10004 /* HowToUseView.swift */,
+				D10008 /* Components */,
 				D10007 /* Helpers */,
 			);
 			path = UI;
@@ -109,8 +114,18 @@
 			isa = PBXGroup;
 			children = (
 				B10024 /* MediaPickerWrappers.swift */,
+				B10025 /* WavPlaybackController.swift */,
+				B10026 /* DocumentExportPicker.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		D10008 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				B10027 /* RecordingTrackRow.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		D10099 /* Products */ = {
@@ -137,6 +152,9 @@
 			dependencies = (
 			);
 			name = NCKitSample;
+			packageProductDependencies = (
+				18F8EE862FBB2B700014461A /* NCKit */,
+			);
 			productName = NCKitSample;
 			productReference = B10000 /* NCKitSample.app */;
 			productType = "com.apple.product-type.application";
@@ -166,7 +184,7 @@
 			);
 			mainGroup = D10000;
 			packageReferences = (
-				18F8EE732FBAF9800014461A /* XCRemoteSwiftPackageReference "NCKit" */,
+				18F8EE852FBB2B700014461A /* XCRemoteSwiftPackageReference "NCKit" */,
 			);
 			productRefGroup = D10099 /* Products */;
 			projectDirPath = "";
@@ -194,7 +212,10 @@
 			files = (
 				A10001 /* NCKitSampleApp.swift in Sources */,
 				A10002 /* ContentView.swift in Sources */,
-				A10003 /* MicrophoneView.swift in Sources */,
+				A10003 /* AudioView.swift in Sources */,
+				A10025 /* WavPlaybackController.swift in Sources */,
+				A10026 /* DocumentExportPicker.swift in Sources */,
+				A10027 /* RecordingTrackRow.swift in Sources */,
 				A10004 /* HowToUseView.swift in Sources */,
 				A10005 /* Theme.swift in Sources */,
 				A10009 /* AudioEngine.swift in Sources */,
@@ -342,20 +363,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		18F8EE732FBAF9800014461A /* XCRemoteSwiftPackageReference "NCKit" */ = {
+		18F8EE852FBB2B700014461A /* XCRemoteSwiftPackageReference "NCKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/5Exceptions-Mobile-Team/NCKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 1.0.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		18F8EE742FBAF9800014461A /* NCKit */ = {
+		18F8EE862FBB2B700014461A /* NCKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 18F8EE732FBAF9800014461A /* XCRemoteSwiftPackageReference "NCKit" */;
+			package = 18F8EE852FBB2B700014461A /* XCRemoteSwiftPackageReference "NCKit" */;
 			productName = NCKit;
 		};
 /* End XCSwiftPackageProductDependency section */

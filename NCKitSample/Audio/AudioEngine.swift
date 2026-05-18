@@ -2,15 +2,7 @@
 //  AudioEngine.swift
 //  NCKit Sample — built by 5Exceptions
 //
-//  Real-time microphone noise cancellation using NCKit (LibDFProcessor).
-//
-//  Integration recipe:
-//    1. let modelURL = try DFN3ModelLocator.modelTarGzURL()
-//    2. let processor = try LibDFProcessor(modelURL: modelURL)
-//    3. For each 10 ms hop (480 samples @ 48 kHz mono Float32):
-//         processor.processFrame(input: ptr, output: ptr)
-//
-//  This file shows the recommended pattern for live mic processing.
+//  Real-time microphone noise cancellation using NCKit (NCKitProcessor).
 //
 
 import AVFoundation
@@ -18,7 +10,6 @@ import Combine
 import Foundation
 import NCKit
 
-@MainActor
 final class AudioEngine: ObservableObject {
 
     // MARK: - Published state for SwiftUI
@@ -40,17 +31,14 @@ final class AudioEngine: ObservableObject {
 
     // MARK: - NCKit
 
-    /// The single LibDFProcessor instance for real-time processing.
-    /// Reusing one instance preserves GRU hidden state across frames.
-    private var processor: LibDFProcessor?
-    private var hopSize: Int = 480 // updated on load to processor.frameLength
+    private var processor: NCKitProcessor?
+    private var hopSize: Int = 480
 
     // MARK: - AVFoundation
 
     private let avEngine = AVAudioEngine()
     private var converterIn: AVAudioConverter?
     private var converterOut: AVAudioConverter?
-    private var inputFormat: AVAudioFormat?
     private var ncFormat: AVAudioFormat = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
         sampleRate: 48_000,
@@ -58,32 +46,36 @@ final class AudioEngine: ObservableObject {
         interleaved: false
     )!
 
-    /// Source node feeds the speaker from `outputRing`.
     private var srcNode: AVAudioSourceNode?
+    private var isTapInstalled = false
 
     // MARK: - Ring buffer for output
 
-    private let outputRingCapacity = 48_000 // 1 s @ 48 kHz
+    private let outputRingCapacity = 48_000
     private var outputRing: [Float] = []
     private var outputReadPos = 0
     private var outputWritePos = 0
     private var outputAvailable = 0
     private let bufferLock = NSLock()
 
-    // MARK: - Hop accumulator (incomplete frame buffer)
+    // MARK: - Hop accumulator
 
     private var hopAccumulator: [Float] = []
 
-    // MARK: - Recording
+    // MARK: - Recording (thread-safe — mic tap runs on audio thread)
 
-    private var recordedOriginal: [Float] = []
-    private var recordedEnhanced: [Float] = []
+    private let recordingCapture = RecordingCapture()
+    private var isCaptureActive = false
     private var recordStartDate: Date?
 
-    // MARK: - Stats
+    private let ncLock = NSLock()
+    private var ncEnabled = true
 
     private var smoothedProcMs: Double = 0
     private let sampleRate: Double = 48_000
+
+    /// True while A/B capture is active (use for UI; updated synchronously on main).
+    var isCapturing: Bool { isCaptureActive }
 
     init() {
         outputRing = [Float](repeating: 0, count: outputRingCapacity)
@@ -92,18 +84,12 @@ final class AudioEngine: ObservableObject {
     // MARK: - Model loading
 
     func loadModel() {
-        status = .loading
+        publishOnMain { self.status = .loading }
         Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             do {
-                // 1. NCKit ships the DeepFilterNet3 model inside the xcframework.
-                //    DFN3ModelLocator finds it and materialises a usable URL.
-                let modelURL = try DFN3ModelLocator.modelTarGzURL()
-
-                // 2. Create the processor once. Reuse across all frames.
-                //    attenLimDb = 100 (unlimited), postFilterBeta = 0 (off)
-                //    are the deep-filter CLI defaults — start here.
-                let processor = try LibDFProcessor(
+                let modelURL = try NCKitModelLocator.modelTarGzURL()
+                let processor = try NCKitProcessor(
                     modelURL: modelURL,
                     attenLimDb: 100,
                     postFilterBeta: 0
@@ -131,22 +117,31 @@ final class AudioEngine: ObservableObject {
         do {
             try configureAudioSession()
             try setupGraph()
+            avEngine.prepare()
             try avEngine.start()
+            try installMicTap()
             isRunning = true
+            framesProcessed = 0
+            startRecording()
         } catch {
+            removeMicTapIfNeeded()
+            isRunning = false
             status = .error(error.localizedDescription)
         }
     }
 
-    func stop() {
-        guard isRunning else { return }
+    @discardableResult
+    func stop() -> (original: URL?, enhanced: URL?)? {
+        guard isRunning else { return nil }
 
-        if isRecording { _ = stopRecording() }
+        let recorded = isCaptureActive ? stopRecording() : nil
 
-        avEngine.inputNode.removeTap(onBus: 0)
+        removeMicTapIfNeeded()
         if let src = srcNode { avEngine.detach(src) }
         avEngine.stop()
         srcNode = nil
+        converterIn = nil
+        converterOut = nil
 
         bufferLock.lock()
         outputRing = [Float](repeating: 0, count: outputRingCapacity)
@@ -159,6 +154,7 @@ final class AudioEngine: ObservableObject {
         isRunning = false
         inputLevelDb = -100
         outputLevelDb = -100
+        return recorded
     }
 
     private func configureAudioSession() throws {
@@ -173,23 +169,16 @@ final class AudioEngine: ObservableObject {
         try session.setActive(true)
     }
 
+    /// Build graph only — install the mic tap **after** `avEngine.start()` so formats are valid.
     private func setupGraph() throws {
         let input = avEngine.inputNode
-        let hwFormat = input.outputFormat(forBus: 0)
-        inputFormat = hwFormat
-
-        // Converters between hardware format and 48 kHz mono Float32 (NCKit input).
-        if hwFormat.sampleRate != sampleRate || hwFormat.channelCount != 1 {
-            converterIn = AVAudioConverter(from: hwFormat, to: ncFormat)
-        }
-
         let mainMixer = avEngine.mainMixerNode
         let mixerFormat = mainMixer.outputFormat(forBus: 0)
+
         if mixerFormat.sampleRate != sampleRate || mixerFormat.channelCount != ncFormat.channelCount {
             converterOut = AVAudioConverter(from: ncFormat, to: mixerFormat)
         }
 
-        // Source node that pulls from our output ring buffer.
         let src = AVAudioSourceNode(format: ncFormat) { [weak self] _, _, frameCount, ablPointer in
             guard let self else { return noErr }
             let buffers = UnsafeMutableAudioBufferListPointer(ablPointer)
@@ -215,55 +204,97 @@ final class AudioEngine: ObservableObject {
         srcNode = src
         avEngine.attach(src)
         avEngine.connect(src, to: mainMixer, format: ncFormat)
+    }
 
-        // Tap mic input.
-        input.installTap(onBus: 0, bufferSize: 4096, format: hwFormat) { [weak self] buffer, _ in
+    private func installMicTap() throws {
+        guard !isTapInstalled else { return }
+
+        let input = avEngine.inputNode
+        let hwFormat = input.outputFormat(forBus: 0)
+        let tapFormat: AVAudioFormat? = (hwFormat.sampleRate > 0 && hwFormat.channelCount > 0) ? hwFormat : nil
+
+        if let tapFormat, tapFormat.sampleRate != sampleRate || tapFormat.channelCount != 1 {
+            guard let converter = AVAudioConverter(from: tapFormat, to: ncFormat) else {
+                throw NSError(
+                    domain: "AudioEngine",
+                    code: 2,
+                    userInfo: [NSLocalizedDescriptionKey: "Could not create audio converter"]
+                )
+            }
+            converterIn = converter
+        } else {
+            converterIn = nil
+        }
+
+        input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { [weak self] buffer, _ in
             guard let self else { return }
             let samples = self.convertToMono48k(buffer)
+            guard !samples.isEmpty else { return }
             self.measureLevel(samples, channel: .input)
             self.handleInputSamples(samples)
         }
+        isTapInstalled = true
+    }
+
+    private func removeMicTapIfNeeded() {
+        guard isTapInstalled else { return }
+        avEngine.inputNode.removeTap(onBus: 0)
+        isTapInstalled = false
     }
 
     // MARK: - NC toggle and recording
 
-    func setNCEnabled(_ enabled: Bool) { isNCEnabled = enabled }
-
-    func startRecording() {
-        guard isRunning, !isRecording else { return }
-        recordedOriginal.removeAll(keepingCapacity: false)
-        recordedEnhanced.removeAll(keepingCapacity: false)
-        recordStartDate = Date()
-        isRecording = true
+    func setNCEnabled(_ enabled: Bool) {
+        ncLock.lock()
+        ncEnabled = enabled
+        ncLock.unlock()
+        isNCEnabled = enabled
     }
 
-    /// Stop recording and return WAV URLs for original + enhanced.
+    func startRecording() {
+        guard isRunning, !isCaptureActive else { return }
+        isCaptureActive = true
+        isRecording = true
+        recordingCapture.begin()
+        recordStartDate = Date()
+    }
+
     func stopRecording() -> (original: URL?, enhanced: URL?)? {
-        guard isRecording else { return nil }
+        guard isCaptureActive else { return nil }
+        isCaptureActive = false
         isRecording = false
 
-        let tempDir = FileManager.default.temporaryDirectory
+        let (origSamples, enhSamples) = recordingCapture.end()
+        recordStartDate = nil
+
+        guard !origSamples.isEmpty else {
+            return (nil, nil)
+        }
+
+        let exportDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("NCKitRecordings", isDirectory: true)
+        try? FileManager.default.createDirectory(at: exportDir, withIntermediateDirectories: true)
+
         let stamp = Int(Date().timeIntervalSince1970)
+        let origURL = exportDir.appendingPathComponent("nckit_original_\(stamp).wav")
+        let enhURL = exportDir.appendingPathComponent("nckit_enhanced_\(stamp).wav")
 
-        let origURL = tempDir.appendingPathComponent("nckit_original_\(stamp).wav")
-        let enhURL = tempDir.appendingPathComponent("nckit_enhanced_\(stamp).wav")
-
-        let origOK = (try? WavWriter.write(samples: recordedOriginal, sampleRate: Int(sampleRate), to: origURL)) != nil
-        let enhOK = (try? WavWriter.write(samples: recordedEnhanced, sampleRate: Int(sampleRate), to: enhURL)) != nil
+        let origOK = (try? WavWriter.write(samples: origSamples, sampleRate: Int(sampleRate), to: origURL)) != nil
+        let enhSamplesToWrite = enhSamples.isEmpty ? origSamples : enhSamples
+        let enhOK = (try? WavWriter.write(samples: enhSamplesToWrite, sampleRate: Int(sampleRate), to: enhURL)) != nil
 
         return (origOK ? origURL : nil, enhOK ? enhURL : nil)
     }
 
     var recordingDuration: TimeInterval {
-        guard let start = recordStartDate, isRecording else { return 0 }
+        guard let start = recordStartDate, isCaptureActive else { return 0 }
         return Date().timeIntervalSince(start)
     }
 
-    // MARK: - Frame processing
+    // MARK: - Frame processing (audio thread)
 
-    /// Feed mic samples through LibDFProcessor 480 samples at a time.
     private func handleInputSamples(_ samples: [Float]) {
-        if isRecording { recordedOriginal.append(contentsOf: samples) }
+        recordingCapture.appendOriginal(samples)
 
         bufferLock.lock()
         hopAccumulator.append(contentsOf: samples)
@@ -275,7 +306,6 @@ final class AudioEngine: ObservableObject {
 
             let outFrame = processOneFrame(inFrame)
 
-            // Push processed frame into output ring.
             bufferLock.lock()
             for sample in outFrame {
                 outputRing[outputWritePos] = sample
@@ -288,14 +318,15 @@ final class AudioEngine: ObservableObject {
             }
         }
         bufferLock.unlock()
-
-        if isRecording { /* recordedEnhanced appended inside processOneFrame */ }
     }
 
-    /// Run one 10 ms hop through LibDFProcessor. This is the core NCKit call.
     private func processOneFrame(_ input: [Float]) -> [Float] {
-        guard isNCEnabled, let processor else {
-            if isRecording { recordedEnhanced.append(contentsOf: input) }
+        ncLock.lock()
+        let ncOn = ncEnabled
+        ncLock.unlock()
+
+        guard ncOn, let processor else {
+            recordingCapture.appendEnhanced(input)
             return input
         }
 
@@ -312,10 +343,9 @@ final class AudioEngine: ObservableObject {
         }
         let elapsedMs = (CFAbsoluteTimeGetCurrent() - t0) * 1000.0
 
-        if isRecording { recordedEnhanced.append(contentsOf: outBuf) }
+        recordingCapture.appendEnhanced(outBuf)
 
-        Task { @MainActor [weak self] in
-            guard let self else { return }
+        publishOnMain {
             self.smoothedProcMs = self.smoothedProcMs * 0.85 + elapsedMs * 0.15
             self.processingTimeMs = self.smoothedProcMs
             self.framesProcessed += 1
@@ -324,17 +354,36 @@ final class AudioEngine: ObservableObject {
         return outBuf
     }
 
-    // MARK: - Format conversion
-
     private func convertToMono48k(_ buffer: AVAudioPCMBuffer) -> [Float] {
+        let frameCount = Int(buffer.frameLength)
+        guard frameCount > 0 else { return [] }
+
+        if buffer.format.channelCount > 1, converterIn == nil,
+           let channels = buffer.floatChannelData {
+            var mono = [Float](repeating: 0, count: frameCount)
+            let chCount = Int(buffer.format.channelCount)
+            for ch in 0..<chCount {
+                let ptr = channels[ch]
+                for i in 0..<frameCount {
+                    mono[i] += ptr[i]
+                }
+            }
+            let scale = 1 / Float(chCount)
+            for i in 0..<frameCount { mono[i] *= scale }
+            return mono
+        }
+
         guard let converter = converterIn else {
-            // Already 48 kHz mono Float32.
             guard let data = buffer.floatChannelData?[0] else { return [] }
-            return Array(UnsafeBufferPointer(start: data, count: Int(buffer.frameLength)))
+            return Array(UnsafeBufferPointer(start: data, count: frameCount))
         }
 
         let inputSR = buffer.format.sampleRate
-        let frameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * sampleRate / inputSR + 64)
+        guard inputSR > 0 else { return [] }
+
+        let frameCapacity = AVAudioFrameCount(
+            Double(buffer.frameLength) * sampleRate / inputSR + 64
+        )
 
         guard let outBuffer = AVAudioPCMBuffer(pcmFormat: ncFormat, frameCapacity: frameCapacity) else {
             return []
@@ -342,6 +391,7 @@ final class AudioEngine: ObservableObject {
 
         var error: NSError?
         var consumed = false
+        let inputCopy = buffer
         let status = converter.convert(to: outBuffer, error: &error) { _, statusPtr in
             if consumed {
                 statusPtr.pointee = .noDataNow
@@ -349,10 +399,13 @@ final class AudioEngine: ObservableObject {
             }
             consumed = true
             statusPtr.pointee = .haveData
-            return buffer
+            return inputCopy
         }
-        guard status != .error, let data = outBuffer.floatChannelData?[0] else { return [] }
-        return Array(UnsafeBufferPointer(start: data, count: Int(outBuffer.frameLength)))
+
+        guard status != .error, error == nil else { return [] }
+        let frames = Int(outBuffer.frameLength)
+        guard frames > 0, let data = outBuffer.floatChannelData?[0] else { return [] }
+        return Array(UnsafeBufferPointer(start: data, count: frames))
     }
 
     // MARK: - Level metering
@@ -361,8 +414,7 @@ final class AudioEngine: ObservableObject {
 
     private func measureLevel(_ samples: [Float], channel: Channel) {
         let db = rmsDb(samples)
-        Task { @MainActor [weak self] in
-            guard let self else { return }
+        publishOnMain {
             switch channel {
             case .input: self.inputLevelDb = db
             case .output: self.outputLevelDb = db
@@ -372,14 +424,7 @@ final class AudioEngine: ObservableObject {
 
     private func measureLevel(_ pointer: UnsafeMutablePointer<Float>, count: Int, channel: Channel) {
         let buf = UnsafeBufferPointer(start: pointer, count: count)
-        let db = rmsDb(Array(buf))
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            switch channel {
-            case .input: self.inputLevelDb = db
-            case .output: self.outputLevelDb = db
-            }
-        }
+        measureLevel(Array(buf), channel: channel)
     }
 
     private func rmsDb(_ samples: [Float]) -> Float {
@@ -388,5 +433,53 @@ final class AudioEngine: ObservableObject {
         for s in samples { sum += s * s }
         let rms = sqrtf(sum / Float(samples.count))
         return rms < 1e-10 ? -100 : 20 * log10f(rms)
+    }
+
+    private func publishOnMain(_ update: @escaping @MainActor () -> Void) {
+        if Thread.isMainThread {
+            MainActor.assumeIsolated(update)
+        } else {
+            Task { @MainActor in update() }
+        }
+    }
+}
+
+// MARK: - Thread-safe recording buffers
+
+private final class RecordingCapture: @unchecked Sendable {
+    private var active = false
+    private var original: [Float] = []
+    private var enhanced: [Float] = []
+    private let lock = NSLock()
+
+    func begin() {
+        lock.lock()
+        active = true
+        original.removeAll(keepingCapacity: true)
+        enhanced.removeAll(keepingCapacity: true)
+        lock.unlock()
+    }
+
+    func appendOriginal(_ samples: [Float]) {
+        lock.lock()
+        if active { original.append(contentsOf: samples) }
+        lock.unlock()
+    }
+
+    func appendEnhanced(_ samples: [Float]) {
+        lock.lock()
+        if active { enhanced.append(contentsOf: samples) }
+        lock.unlock()
+    }
+
+    func end() -> (original: [Float], enhanced: [Float]) {
+        lock.lock()
+        active = false
+        let capturedOriginal = original
+        let capturedEnhanced = enhanced
+        original = []
+        enhanced = []
+        lock.unlock()
+        return (capturedOriginal, capturedEnhanced)
     }
 }

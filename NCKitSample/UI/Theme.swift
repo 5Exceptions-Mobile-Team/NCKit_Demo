@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 enum AITheme {
 
@@ -112,6 +113,56 @@ struct GlassCard: ViewModifier {
 extension View {
     func glassCard(cornerRadius: CGFloat = 16, strokeOpacity: Double = 0.18) -> some View {
         modifier(GlassCard(cornerRadius: cornerRadius, strokeOpacity: strokeOpacity))
+    }
+
+    /// Frosted navigation chrome matching the tab bar (`systemUltraThinMaterialDark`).
+    func glassNavigationChrome() -> some View {
+        modifier(GlassNavigationChromeModifier())
+    }
+}
+
+// MARK: - Navigation + status-bar blur (matches tab bar)
+
+private enum GlassChrome {
+    static let blurStyle: UIBlurEffect.Style = .systemUltraThinMaterialDark
+}
+
+private struct GlassNavigationChromeModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .background(alignment: .top) {
+                StatusBarBlurStrip()
+            }
+    }
+}
+
+/// Blur for the safe area above the navigation bar (status bar / Dynamic Island).
+private struct StatusBarBlurStrip: View {
+    var body: some View {
+        GeometryReader { geo in
+            let height = geo.safeAreaInsets.top
+            if height > 0 {
+                MaterialBlurView(style: GlassChrome.blurStyle)
+                    .frame(height: height)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        }
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct MaterialBlurView: UIViewRepresentable {
+    let style: UIBlurEffect.Style
+
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: style)
     }
 }
 

@@ -2,7 +2,7 @@
 //  VideoImportView.swift
 //  NCKit Sample — built by 5Exceptions
 //
-//  Demonstrates DFN3FileProcessor for offline video noise cancellation.
+//  Demonstrates NCKitFileProcessor for offline video noise cancellation.
 //
 
 import AVFoundation
@@ -28,7 +28,7 @@ struct VideoImportView: View {
             }
             .navigationTitle("Video NC")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .glassNavigationChrome()
             .sheet(isPresented: $showPhotoPicker) {
                 PhotoPickerView { url in startProcessing(url: url) }
             }
@@ -125,7 +125,7 @@ struct VideoImportView: View {
     private var heroText: some View {
         VStack(spacing: 6) {
             GradientText(text: "Denoise a Video", font: .title2.weight(.bold))
-            Text("NCKit extracts the audio, runs DeepFilterNet3 on-device, and mixes the clean track back in.")
+            Text("NCKit extracts the audio, runs NCKit on-device, and mixes the clean track back in.")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.65))
                 .multilineTextAlignment(.center)

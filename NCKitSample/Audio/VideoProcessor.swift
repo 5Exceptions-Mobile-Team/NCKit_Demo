@@ -6,8 +6,8 @@
 //
 //  Pipeline:
 //    1. AVFoundation extracts mono Float32 audio from the source video.
-//    2. DFN3FileProcessor denoises the audio file (handles resampling internally).
-//    3. DFN3AudioNormalizer applies speech-gated makeup gain.
+//    2. NCKitFileProcessor denoises the audio file (handles resampling internally).
+//    3. NCKitAudioNormalizer applies speech-gated makeup gain.
 //    4. AVMutableComposition muxes the cleaned audio back with the video.
 //
 
@@ -99,20 +99,20 @@ final class VideoProcessor: ObservableObject {
 
             // Step 2 — Run NCKit on the extracted WAV.
             //
-            // DFN3FileProcessor handles streaming I/O internally and is safe
-            // for files of any length. We pass a fresh LibDFProcessor so GRU
+            // NCKitFileProcessor handles streaming I/O internally and is safe
+            // for files of any length. We pass a fresh NCKitProcessor so GRU
             // state starts clean for this file.
             phase = .processing
             let denoisedURL = tempDir.appendingPathComponent("nckit_clean_\(UUID().uuidString).wav")
 
             try await Task.detached(priority: .userInitiated) {
-                let modelURL = try DFN3ModelLocator.modelTarGzURL()
-                let processor = try LibDFProcessor(
+                let modelURL = try NCKitModelLocator.modelTarGzURL()
+                let processor = try NCKitProcessor(
                     modelURL: modelURL,
                     attenLimDb: 100,
                     postFilterBeta: 0
                 )
-                try DFN3FileProcessor.processFile(
+                try NCKitFileProcessor.processFile(
                     inputURL: originalWavURL,
                     outputURL: denoisedURL,
                     processor: processor
@@ -126,7 +126,7 @@ final class VideoProcessor: ObservableObject {
                 throw ProcessingError.noAudioTrack
             }
             var enhancedSamples = try await extractAudio(from: denoisedAsset, track: dAudio)
-            DFN3AudioNormalizer.applySpeechGatedMakeupGain(&enhancedSamples, sampleRate: sampleRate)
+            NCKitAudioNormalizer.applySpeechGatedMakeupGain(&enhancedSamples, sampleRate: sampleRate)
             progress = 0.85
 
             let enhancedWavURL = tempDir.appendingPathComponent("nckit_enh_\(UUID().uuidString).wav")
