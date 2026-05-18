@@ -1,6 +1,6 @@
 //
 //  WavWriter.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Tiny helper for writing 16-bit PCM WAV files from Float32 samples.
 //  Used by AudioEngine to persist recordings for sharing/playback.

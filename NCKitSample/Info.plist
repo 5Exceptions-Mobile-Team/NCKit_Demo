@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Built by 5Exceptions. NCKit © 5Exceptions Mobile Team.</string>
+	<string>NCKit processes audio entirely on-device. No data is uploaded.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>

@@ -1,6 +1,6 @@
 //
 //  RecordingTrackRow.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Play / share / save row for one recorded WAV track.
 //

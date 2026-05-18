@@ -1,6 +1,6 @@
 //
 //  DocumentExportPicker.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Presents the system "Save to Files" sheet for a local file.
 //

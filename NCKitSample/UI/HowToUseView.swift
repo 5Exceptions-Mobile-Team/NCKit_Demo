@@ -1,6 +1,6 @@
 //
 //  HowToUseView.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Copy-paste code snippets that show how to integrate NCKit in your own app.
 //
@@ -101,7 +101,7 @@ struct HowToUseView: View {
                         )
 
                         docsLinks
-                        FiveExceptionsFooter()
+                        SampleAppFooter()
                     }
                     .padding()
                 }
@@ -139,9 +139,7 @@ struct HowToUseView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(.white)
             linkRow(label: "Documentation", icon: "doc.text", urlString: "https://docs.nckit.io")
-            linkRow(label: "Sample on GitHub", icon: "chevron.left.forwardslash.chevron.right", urlString: "https://github.com/5Exceptions-Mobile-Team/NCKit_Demo")
-            linkRow(label: "5Exceptions", icon: "globe", urlString: "https://5exceptions.com")
-            linkRow(label: "Contact sales", icon: "envelope", urlString: "mailto:sdk@5exceptions.com")
+            linkRow(label: "SDK repository", icon: "chevron.left.forwardslash.chevron.right", urlString: "https://github.com/5Exceptions-Mobile-Team/NCKit")
         }
         .glassCard()
     }

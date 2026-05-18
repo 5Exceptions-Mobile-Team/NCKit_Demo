@@ -1,6 +1,6 @@
 //
 //  AudioEngine.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Real-time microphone noise cancellation using NCKit (NCKitProcessor).
 //

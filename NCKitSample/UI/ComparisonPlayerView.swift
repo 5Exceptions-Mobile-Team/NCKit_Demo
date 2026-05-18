@@ -1,6 +1,6 @@
 //
 //  ComparisonPlayerView.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  A/B comparison player for original vs NCKit-enhanced video.
 //

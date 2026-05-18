@@ -1,6 +1,6 @@
 //
 //  NCKitSampleApp.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Entry point. The app showcases two integrations of NCKit:
 //    1. Real-time microphone NC via NCKitProcessor.

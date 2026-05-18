@@ -1,6 +1,6 @@
 //
 //  VideoImportView.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Demonstrates NCKitFileProcessor for offline video noise cancellation.
 //
@@ -103,7 +103,7 @@ struct VideoImportView: View {
                     Pill(text: "M4V", tinted: true)
                 }
 
-                FiveExceptionsFooter()
+                SampleAppFooter()
                 Spacer(minLength: 12)
             }
             .padding(.horizontal)

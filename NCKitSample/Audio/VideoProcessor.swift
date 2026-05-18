@@ -1,6 +1,6 @@
 //
 //  VideoProcessor.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Offline noise cancellation for video files using NCKit.
 //

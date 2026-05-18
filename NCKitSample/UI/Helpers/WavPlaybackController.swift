@@ -1,6 +1,6 @@
 //
 //  WavPlaybackController.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  Plays one recorded WAV at a time for A/B listening after capture.
 //

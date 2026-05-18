@@ -1,6 +1,6 @@
 //
 //  Theme.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 //  AI-transparent glass palette, matching the NCKit docs website.
 //  Cyan → violet → pink gradients, frosted glass surfaces, dark by default.

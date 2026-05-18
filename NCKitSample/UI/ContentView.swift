@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  NCKit Sample — built by 5Exceptions
+//  NCKit Sample
 //
 
 import SwiftUI
@@ -21,9 +21,9 @@ struct ContentView: View {
     }
 }
 
-// MARK: - 5Exceptions branding footer
+// MARK: - Footer
 
-struct FiveExceptionsFooter: View {
+struct SampleAppFooter: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 8) {
@@ -32,7 +32,7 @@ struct FiveExceptionsFooter: View {
                     .foregroundStyle(AITheme.aiTextGradient)
                 GradientText(text: "Powered by NCKit", font: .caption2.weight(.bold))
             }
-            Text("Built by 5Exceptions • All processing on-device")
+            Text("All processing on-device • No cloud upload")
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.55))
         }
