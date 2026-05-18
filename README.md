@@ -1,10 +1,8 @@
 # NCKit Sample — iOS
 
-> Reference iOS app for the **NCKit** noise-cancellation framework.
+Reference iOS app for the **NCKit** noise-cancellation SDK.
 
-A clean, copy-paste-friendly demo of how to integrate
-[**NCKit**](https://github.com/5Exceptions-Mobile-Team/NCKit) into a SwiftUI app.
-Use it as a working reference, or as a starting template for your own product.
+A clean, copy-paste-friendly demo of how to integrate NCKit into a SwiftUI app. Use it as a working reference or as a starting template for your own product.
 
 ---
 
@@ -12,19 +10,18 @@ Use it as a working reference, or as a starting template for your own product.
 
 | Tab | What it shows | NCKit APIs used |
 |-----|---------------|-----------------|
-| **Microphone** | Real-time mic noise cancellation, A/B recording, live meters, processing stats | `NCKitProcessor`, `NCKitModelLocator` |
+| **Audio** | Real-time mic noise cancellation, A/B recording, live meters | `NCKitProcessor`, `NCKitModelLocator` |
 | **Video** | Pick a video, denoise its audio, A/B compare, save to Photos | `NCKitFileProcessor`, `NCKitAudioNormalizer`, `NCKitProcessor` |
-| **How to Use** | Six copy-paste snippets that mirror exactly what the other tabs do | every public API in NCKit |
+| **How to Use** | Copy-paste snippets that mirror what the other tabs do | every public API in NCKit |
 
-Visual design matches the [NCKit documentation site](https://docs.nckit.io) — dark
-default with glassmorphic surfaces and a cyan → violet → pink accent.
+Visual design matches the [NCKit documentation site](https://docs.nckit.io) — dark theme with glassmorphic surfaces.
 
 ---
 
 ## Requirements
 
 - Xcode **15.2** or newer
-- iOS **16.0** target (physical device recommended; mic & Photos features need a real device for full testing)
+- iOS **16.0** target (physical device recommended for mic & Photos)
 - Swift **5.9+**
 - arm64 (device) or arm64 simulator
 - Apple Developer team for code signing
@@ -35,28 +32,21 @@ default with glassmorphic surfaces and a cyan → violet → pink accent.
 
 ```
 KrispyiOS/
-├── NCKit.xcframework/          ← Drop-in binary framework (the SDK)
 ├── NCKitSample.xcodeproj
 └── NCKitSample/
-    ├── NCKitSampleApp.swift    ← Entry point, dark theme + accent
-    ├── Info.plist
+    ├── NCKitSampleApp.swift
     ├── Audio/
-    │   ├── AudioEngine.swift       ← AVAudioEngine + NCKitProcessor (real-time)
-    │   ├── VideoProcessor.swift    ← NCKitFileProcessor (offline file)
-    │   ├── WaveformGenerator.swift
-    │   └── WavWriter.swift
+    │   ├── AudioEngine.swift
+    │   ├── VideoProcessor.swift
+    │   └── …
     └── UI/
-        ├── Theme.swift              ← AI-transparent glass palette + helpers
-        ├── ContentView.swift        ← Tab bar + 5Exceptions footer
-        ├── MicrophoneView.swift
+        ├── ContentView.swift
+        ├── AudioView.swift
         ├── VideoImportView.swift
-        ├── ComparisonPlayerView.swift
-        ├── HowToUseView.swift
-        └── Helpers/
-            └── MediaPickerWrappers.swift
+        └── HowToUseView.swift
 ```
 
-No CocoaPods, no SwiftPM dependencies — the app links **only** `NCKit.xcframework`.
+NCKit is added via **Swift Package Manager** (tag `1.0.1`). No CocoaPods required.
 
 ---
 
@@ -72,171 +62,43 @@ open NCKitSample.xcodeproj
 2. Pick your development team in **Signing & Capabilities**.
 3. Connect a device and hit **⌘R**.
 
-That's it — no `pod install`, no `xcframework` build step, no model download.
-The `.xcframework` already embeds the NCKit model.
+The SDK is resolved from the NCKit git package — no manual xcframework download.
 
 ---
 
 ## How to integrate NCKit in your own app
 
-The whole point of this sample is to make the integration obvious. Here's the
-30-second version — see the **How to Use** tab in the app for the full set.
+See the **How to Use** tab in the app, or the [documentation](https://docs.nckit.io/docs/getting-started/quick-start).
 
-### 1. Add the framework
+### Quick steps
 
-Drag `NCKit.xcframework` into Xcode → **Frameworks, Libraries, and Embedded Content**
-→ choose **Embed & Sign**.
-
-### 2. Locate the bundled model
-
-```swift
-import NCKit
-
-let modelURL = try NCKitModelLocator.modelTarGzURL()
-```
-
-### 3. Create the processor once
-
-```swift
-let processor = try NCKitProcessor(
-    modelURL: modelURL,
-    attenLimDb: 100,      // 100 = unlimited
-    postFilterBeta: 0     // 0 = off (CLI default)
-)
-```
-
-### 4. Real-time mic processing
-
-Feed exactly `processor.frameLength` samples (480 = 10 ms @ 48 kHz mono).
-Call from a single serial queue.
-
-```swift
-let hop = processor.frameLength
-var input  = [Float](repeating: 0, count: hop)
-var output = [Float](repeating: 0, count: hop)
-
-input.withUnsafeMutableBufferPointer { ib in
-    output.withUnsafeMutableBufferPointer { ob in
-        processor.processFrame(
-            input:  ib.baseAddress!,
-            output: ob.baseAddress!
-        )
-    }
-}
-```
-
-### 5. Offline file processing
-
-```swift
-try NCKitFileProcessor.processFile(
-    inputURL:  noisyFile,
-    outputURL: cleanFile,
-    processor: processor
-)
-```
-
-### 6. Loudness normalization
-
-After denoising, speech can sound quieter. Apply a one-shot speech-gated
-makeup gain:
-
-```swift
-var samples: [Float] = readSamples()
-
-NCKitAudioNormalizer.applySpeechGatedMakeupGain(
-    &samples,
-    sampleRate: 48_000,
-    targetRmsDbfs: -18
-)
-```
-
-### 7. Typed error handling
-
-Every NCKit operation throws `NCKitError` — a `Sendable` enum.
-
-```swift
-do {
-    let processor = try NCKitProcessor(modelURL: modelURL)
-} catch NCKitError.missingModel(let name) {
-    print("Model not embedded: \(name)")
-} catch NCKitError.libraryInit {
-    print("Engine init failed")
-} catch {
-    print(error)
-}
-```
+1. Add package: `https://github.com/5Exceptions-Mobile-Team/NCKit.git` → version **1.0.1**
+2. **Embed & Sign** on your app target
+3. `import NCKit` and call `NCKitModelLocator.modelTarGzURL()` → `NCKitProcessor` → `NCKitFileProcessor`
 
 ---
 
 ## Permissions
 
-The app declares the minimum Info.plist keys you'll need in your own app:
+| Key | When needed |
+|-----|-------------|
+| `NSMicrophoneUsageDescription` | Live mic NC |
+| `NSPhotoLibraryUsageDescription` | Import videos |
+| `NSPhotoLibraryAddUsageDescription` | Save enhanced video |
 
-- `NSMicrophoneUsageDescription` — for live mic NC
-- `NSPhotoLibraryUsageDescription` — to import videos
-- `NSPhotoLibraryAddUsageDescription` — to save the enhanced result
-- `UIBackgroundModes` → `audio` — to keep processing while in background
-
-All audio runs **entirely on-device**. Nothing leaves the phone.
-
----
-
-## Performance
-
-Measured on iPhone 15 Pro (arm64):
-
-| Operation | Time |
-|-----------|------|
-| Model load | ~200 ms (cold), then cached |
-| Per-frame denoise (10 ms hop) | ~0.4 ms |
-| File processing | ~5–10× real-time |
-
-The model is loaded once per `NCKitProcessor` instance. Reuse the processor —
-don't recreate it per chunk.
-
----
-
-## Privacy
-
-- All inference runs locally with the bundled NCKit ONNX model.
-- No network calls, no analytics, no telemetry.
-- Audio buffers never leave the device.
-- Recordings are stored in the app's temp directory and shared via `ShareLink`
-  only if the user taps the share button.
-
----
-
-## Troubleshooting
-
-**Black screen on launch / model fails to load**
-The xcframework must be embedded (not just linked). Confirm
-*Embed & Sign* under **Frameworks, Libraries, and Embedded Content**.
-
-**No audio on simulator**
-Simulator microphone input depends on macOS permissions. Test on a device for
-realistic behaviour.
-
-**"Microphone Access" alert keeps appearing**
-You denied the permission. Tap **Open Settings** and re-enable it for
-*NCKit Sample*.
-
-**Video saved but no audio**
-Make sure the source video has an audio track. The sample throws
-`ProcessingError.noAudioTrack` for video-only files.
+All audio runs **entirely on-device**.
 
 ---
 
 ## Links
 
-- **NCKit documentation** — [docs.nckit.io](https://docs.nckit.io)
-- **NCKit framework repo** — [github.com/5Exceptions-Mobile-Team/NCKit](https://github.com/5Exceptions-Mobile-Team/NCKit)
-- **This sample** — [github.com/5Exceptions-Mobile-Team/NCKit_Demo](https://github.com/5Exceptions-Mobile-Team/NCKit_Demo)
+- **Documentation** — [docs.nckit.io](https://docs.nckit.io)
+- **NCKit SDK** — [GitHub](https://github.com/5Exceptions-Mobile-Team/NCKit)
 
 ---
 
 ## License
 
-The sample app source in this repository is released under the **MIT License**
-so you can copy it freely into your own projects.
+Sample app source is **MIT License** — copy freely into your projects.
 
----
+`NCKit.xcframework` is distributed under a separate commercial license. See [License](https://docs.nckit.io/docs/legal/license).
