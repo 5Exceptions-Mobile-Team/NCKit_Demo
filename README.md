@@ -36,8 +36,6 @@ NCKit is pulled via SPM from `https://github.com/5Exceptions-Mobile-Team/NCKit.g
 - `NSPhotoLibraryUsageDescription` / `NSPhotoLibraryAddUsageDescription` — import and save video
 
 ## Docs
-
-- [docs.nckit.io](https://docs.nckit.io)
 - [SDK repo](https://github.com/5Exceptions-Mobile-Team/NCKit)
 
 Sample source: MIT. `NCKit.xcframework`: see [license](https://docs.nckit.io/docs/legal/license).
