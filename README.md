@@ -12,7 +12,7 @@ Reference SwiftUI app for the [NCKit](https://github.com/5Exceptions-Mobile-Team
 
 ```bash
 git clone https://github.com/5Exceptions-Mobile-Team/NCKit_Demo.git
-cd NCKit_Demo/KrispyiOS
+cd NCKit_Demo
 open NCKitSample.xcodeproj
 ```
 
