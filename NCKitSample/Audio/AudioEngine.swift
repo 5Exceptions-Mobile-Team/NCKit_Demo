@@ -2,15 +2,18 @@
 //  AudioEngine.swift
 //  NCKit Sample
 //
-//  Real-time microphone noise cancellation using NCKit (NCKitProcessor).
+//  Real-time microphone noise cancellation using NCKitStreamProcessor.
 //
 
 import AVFoundation
 import Combine
 import Foundation
 import NCKit
+import os
 
 final class AudioEngine: ObservableObject {
+
+    private static let log = Logger(subsystem: "com.fiveexceptions.nckitsample", category: "AudioEngine")
 
     // MARK: - Published state for SwiftUI
 
@@ -31,14 +34,12 @@ final class AudioEngine: ObservableObject {
 
     // MARK: - NCKit
 
-    private var processor: NCKitProcessor?
-    private var hopSize: Int = 480
+    private var ncProcessor: NCKitProcessor?
+    private var streamProcessor: NCKitStreamProcessor?
 
     // MARK: - AVFoundation
 
     private let avEngine = AVAudioEngine()
-    private var converterIn: AVAudioConverter?
-    private var converterOut: AVAudioConverter?
     private var ncFormat: AVAudioFormat = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
         sampleRate: 48_000,
@@ -47,7 +48,10 @@ final class AudioEngine: ObservableObject {
     )!
 
     private var srcNode: AVAudioSourceNode?
+    /// Drives the input node so HW format is non-zero; volume 0 avoids dry-mic bleed to speakers.
+    private var inputMixer: AVAudioMixerNode?
     private var isTapInstalled = false
+    private var reportedTapError = false
 
     // MARK: - Ring buffer for output
 
@@ -57,10 +61,6 @@ final class AudioEngine: ObservableObject {
     private var outputWritePos = 0
     private var outputAvailable = 0
     private let bufferLock = NSLock()
-
-    // MARK: - Hop accumulator
-
-    private var hopAccumulator: [Float] = []
 
     // MARK: - Recording (thread-safe — mic tap runs on audio thread)
 
@@ -96,9 +96,8 @@ final class AudioEngine: ObservableObject {
                 )
 
                 await MainActor.run {
-                    self.processor = processor
-                    self.hopSize = processor.frameLength
-                    self.hopAccumulator.reserveCapacity(processor.frameLength)
+                    self.ncProcessor = processor
+                    self.streamProcessor = NCKitStreamProcessor(processor: processor)
                     self.status = .ready
                 }
             } catch {
@@ -112,21 +111,29 @@ final class AudioEngine: ObservableObject {
     // MARK: - Start / stop
 
     func start() {
-        guard !isRunning, processor != nil else { return }
+        guard !isRunning, let ncProcessor else { return }
 
         do {
+            teardownAudioGraph()
+
+            streamProcessor = NCKitStreamProcessor(processor: ncProcessor)
+            reportedTapError = false
+
             try configureAudioSession()
             try setupGraph()
             avEngine.prepare()
-            try avEngine.start()
             try installMicTap()
+            try avEngine.start()
+
             isRunning = true
             framesProcessed = 0
+            status = .ready
             startRecording()
         } catch {
-            removeMicTapIfNeeded()
+            teardownAudioGraph()
             isRunning = false
             status = .error(error.localizedDescription)
+            Self.log.error("Failed to start audio engine: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -135,49 +142,75 @@ final class AudioEngine: ObservableObject {
         guard isRunning else { return nil }
 
         let recorded = isCaptureActive ? stopRecording() : nil
-
-        removeMicTapIfNeeded()
-        if let src = srcNode { avEngine.detach(src) }
-        avEngine.stop()
-        srcNode = nil
-        converterIn = nil
-        converterOut = nil
+        teardownAudioGraph()
 
         bufferLock.lock()
         outputRing = [Float](repeating: 0, count: outputRingCapacity)
         outputReadPos = 0
         outputWritePos = 0
         outputAvailable = 0
-        hopAccumulator.removeAll(keepingCapacity: true)
         bufferLock.unlock()
 
+        streamProcessor?.reset()
+        streamProcessor = nil
         isRunning = false
         inputLevelDb = -100
         outputLevelDb = -100
+        if ncProcessor != nil {
+            status = .ready
+        }
         return recorded
+    }
+
+    // MARK: - Audio graph lifecycle
+
+    /// Fully tear down taps, nodes, and engine state so a second `start()` is safe.
+    private func teardownAudioGraph() {
+        removeMicTapIfNeeded()
+
+        if let src = srcNode {
+            avEngine.disconnectNodeOutput(src)
+            avEngine.detach(src)
+        }
+        srcNode = nil
+
+        if let inputMixer {
+            avEngine.disconnectNodeInput(inputMixer)
+            avEngine.disconnectNodeOutput(avEngine.inputNode)
+            avEngine.detach(inputMixer)
+        }
+        inputMixer = nil
+
+        if avEngine.isRunning {
+            avEngine.stop()
+        }
+        avEngine.reset()
     }
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
+        // Use .allowBluetooth (HFP) for mic — .allowBluetoothA2DP can break the input chain.
         try session.setCategory(
             .playAndRecord,
-            mode: .voiceChat,
-            options: [.defaultToSpeaker, .allowBluetoothA2DP]
+            mode: .measurement,
+            options: [.defaultToSpeaker, .allowBluetooth]
         )
         try session.setPreferredSampleRate(sampleRate)
         try session.setPreferredIOBufferDuration(0.01)
         try session.setActive(true)
     }
 
-    /// Build graph only — install the mic tap **after** `avEngine.start()` so formats are valid.
     private func setupGraph() throws {
-        let input = avEngine.inputNode
         let mainMixer = avEngine.mainMixerNode
-        let mixerFormat = mainMixer.outputFormat(forBus: 0)
+        let input = avEngine.inputNode
 
-        if mixerFormat.sampleRate != sampleRate || mixerFormat.channelCount != ncFormat.channelCount {
-            converterOut = AVAudioConverter(from: ncFormat, to: mixerFormat)
-        }
+        // Connect mic into the graph so input HW format is initialized (not 0 Hz).
+        // inputMixer is not wired to mainMixer — only denoised srcNode is heard.
+        let im = AVAudioMixerNode()
+        inputMixer = im
+        avEngine.attach(im)
+        avEngine.connect(input, to: im, format: nil)
+        im.outputVolume = 0
 
         let src = AVAudioSourceNode(format: ncFormat) { [weak self] _, _, frameCount, ablPointer in
             guard let self else { return noErr }
@@ -201,9 +234,11 @@ final class AudioEngine: ObservableObject {
             self.measureLevel(dst, count: count, channel: .output)
             return noErr
         }
+
         srcNode = src
         avEngine.attach(src)
         avEngine.connect(src, to: mainMixer, format: ncFormat)
+        mainMixer.outputVolume = 1.0
     }
 
     private func installMicTap() throws {
@@ -211,27 +246,22 @@ final class AudioEngine: ObservableObject {
 
         let input = avEngine.inputNode
         let hwFormat = input.outputFormat(forBus: 0)
-        let tapFormat: AVAudioFormat? = (hwFormat.sampleRate > 0 && hwFormat.channelCount > 0) ? hwFormat : nil
 
-        if let tapFormat, tapFormat.sampleRate != sampleRate || tapFormat.channelCount != 1 {
-            guard let converter = AVAudioConverter(from: tapFormat, to: ncFormat) else {
-                throw NSError(
-                    domain: "AudioEngine",
-                    code: 2,
-                    userInfo: [NSLocalizedDescriptionKey: "Could not create audio converter"]
-                )
-            }
-            converterIn = converter
-        } else {
-            converterIn = nil
+        // installTap format must match HW format exactly — nil fails when HW is still 0 Hz.
+        guard hwFormat.sampleRate > 0, hwFormat.channelCount > 0 else {
+            throw NSError(
+                domain: "AudioEngine",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Microphone not available (0 Hz format). Use a physical iPhone and allow microphone access."]
+            )
         }
 
-        input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { [weak self] buffer, _ in
+        try streamProcessor?.prepare(inputFormat: hwFormat)
+
+        input.installTap(onBus: 0, bufferSize: 4096, format: hwFormat) { [weak self] buffer, _ in
             guard let self else { return }
-            let samples = self.convertToMono48k(buffer)
-            guard !samples.isEmpty else { return }
-            self.measureLevel(samples, channel: .input)
-            self.handleInputSamples(samples)
+            self.handleTapBuffer(buffer)
         }
         isTapInstalled = true
     }
@@ -293,119 +323,69 @@ final class AudioEngine: ObservableObject {
 
     // MARK: - Frame processing (audio thread)
 
-    private func handleInputSamples(_ samples: [Float]) {
-        recordingCapture.appendOriginal(samples)
+    private func handleTapBuffer(_ buffer: AVAudioPCMBuffer) {
+        guard let streamProcessor else { return }
 
-        bufferLock.lock()
-        hopAccumulator.append(contentsOf: samples)
+        do {
+            try streamProcessor.prepare(inputFormat: buffer.format)
+            let dry = try streamProcessor.convertToTargetFormat(buffer)
+            guard !dry.isEmpty else { return }
 
-        while hopAccumulator.count >= hopSize {
-            let inFrame = Array(hopAccumulator.prefix(hopSize))
-            hopAccumulator.removeFirst(hopSize)
-            bufferLock.unlock()
+            measureLevel(dry, channel: .input)
+            recordingCapture.appendOriginal(dry)
 
-            let outFrame = processOneFrame(inFrame)
+            ncLock.lock()
+            let ncOn = ncEnabled
+            ncLock.unlock()
+
+            let outFrames: [[Float]]
+            if ncOn {
+                let t0 = CFAbsoluteTimeGetCurrent()
+                outFrames = try streamProcessor.processConverted(dry)
+                let elapsedMs = (CFAbsoluteTimeGetCurrent() - t0) * 1000.0
+                publishOnMain {
+                    self.smoothedProcMs = self.smoothedProcMs * 0.85 + elapsedMs * 0.15
+                    self.processingTimeMs = self.smoothedProcMs
+                    self.framesProcessed += outFrames.count
+                }
+            } else {
+                outFrames = chunk(dry, hop: streamProcessor.frameLength)
+            }
 
             bufferLock.lock()
-            for sample in outFrame {
-                outputRing[outputWritePos] = sample
-                outputWritePos = (outputWritePos + 1) % outputRingCapacity
-                if outputAvailable < outputRingCapacity {
-                    outputAvailable += 1
-                } else {
-                    outputReadPos = (outputReadPos + 1) % outputRingCapacity
+            for frame in outFrames {
+                recordingCapture.appendEnhanced(frame)
+                for sample in frame {
+                    outputRing[outputWritePos] = sample
+                    outputWritePos = (outputWritePos + 1) % outputRingCapacity
+                    if outputAvailable < outputRingCapacity {
+                        outputAvailable += 1
+                    } else {
+                        outputReadPos = (outputReadPos + 1) % outputRingCapacity
+                    }
+                }
+            }
+            bufferLock.unlock()
+        } catch {
+            Self.log.error("Tap processing failed: \(error.localizedDescription, privacy: .public)")
+            if !reportedTapError {
+                reportedTapError = true
+                publishOnMain {
+                    self.status = .error("Mic processing failed: \(error.localizedDescription)")
                 }
             }
         }
-        bufferLock.unlock()
     }
 
-    private func processOneFrame(_ input: [Float]) -> [Float] {
-        ncLock.lock()
-        let ncOn = ncEnabled
-        ncLock.unlock()
-
-        guard ncOn, let processor else {
-            recordingCapture.appendEnhanced(input)
-            return input
+    private func chunk(_ samples: [Float], hop: Int) -> [[Float]] {
+        guard hop > 0, !samples.isEmpty else { return [] }
+        var frames: [[Float]] = []
+        var idx = 0
+        while idx + hop <= samples.count {
+            frames.append(Array(samples[idx..<(idx + hop)]))
+            idx += hop
         }
-
-        var inBuf = input
-        var outBuf = [Float](repeating: 0, count: hopSize)
-
-        let t0 = CFAbsoluteTimeGetCurrent()
-        inBuf.withUnsafeMutableBufferPointer { ib in
-            outBuf.withUnsafeMutableBufferPointer { ob in
-                if let ip = ib.baseAddress, let op = ob.baseAddress {
-                    processor.processFrame(input: ip, output: op)
-                }
-            }
-        }
-        let elapsedMs = (CFAbsoluteTimeGetCurrent() - t0) * 1000.0
-
-        recordingCapture.appendEnhanced(outBuf)
-
-        publishOnMain {
-            self.smoothedProcMs = self.smoothedProcMs * 0.85 + elapsedMs * 0.15
-            self.processingTimeMs = self.smoothedProcMs
-            self.framesProcessed += 1
-        }
-
-        return outBuf
-    }
-
-    private func convertToMono48k(_ buffer: AVAudioPCMBuffer) -> [Float] {
-        let frameCount = Int(buffer.frameLength)
-        guard frameCount > 0 else { return [] }
-
-        if buffer.format.channelCount > 1, converterIn == nil,
-           let channels = buffer.floatChannelData {
-            var mono = [Float](repeating: 0, count: frameCount)
-            let chCount = Int(buffer.format.channelCount)
-            for ch in 0..<chCount {
-                let ptr = channels[ch]
-                for i in 0..<frameCount {
-                    mono[i] += ptr[i]
-                }
-            }
-            let scale = 1 / Float(chCount)
-            for i in 0..<frameCount { mono[i] *= scale }
-            return mono
-        }
-
-        guard let converter = converterIn else {
-            guard let data = buffer.floatChannelData?[0] else { return [] }
-            return Array(UnsafeBufferPointer(start: data, count: frameCount))
-        }
-
-        let inputSR = buffer.format.sampleRate
-        guard inputSR > 0 else { return [] }
-
-        let frameCapacity = AVAudioFrameCount(
-            Double(buffer.frameLength) * sampleRate / inputSR + 64
-        )
-
-        guard let outBuffer = AVAudioPCMBuffer(pcmFormat: ncFormat, frameCapacity: frameCapacity) else {
-            return []
-        }
-
-        var error: NSError?
-        var consumed = false
-        let inputCopy = buffer
-        let status = converter.convert(to: outBuffer, error: &error) { _, statusPtr in
-            if consumed {
-                statusPtr.pointee = .noDataNow
-                return nil
-            }
-            consumed = true
-            statusPtr.pointee = .haveData
-            return inputCopy
-        }
-
-        guard status != .error, error == nil else { return [] }
-        let frames = Int(outBuffer.frameLength)
-        guard frames > 0, let data = outBuffer.floatChannelData?[0] else { return [] }
-        return Array(UnsafeBufferPointer(start: data, count: frames))
+        return frames
     }
 
     // MARK: - Level metering

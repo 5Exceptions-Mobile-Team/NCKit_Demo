@@ -63,6 +63,7 @@ final class VideoProcessor: ObservableObject {
     /// End-to-end video denoise using NCKit.
     func processVideo(at sourceURL: URL) async {
         reset()
+        VideoImportLogger.fileSummary(url: sourceURL, label: "processVideo input")
 
         do {
             let tempDir = FileManager.default.temporaryDirectory
@@ -77,8 +78,10 @@ final class VideoProcessor: ObservableObject {
                 try FileManager.default.removeItem(at: workingURL)
             }
             try FileManager.default.copyItem(at: sourceURL, to: workingURL)
+            VideoImportLogger.fileSummary(url: workingURL, label: "Working copy")
 
             let asset = AVURLAsset(url: workingURL)
+            await VideoImportLogger.assetSummary(asset, label: "Input asset")
             guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
                 throw ProcessingError.noAudioTrack
             }
@@ -150,8 +153,10 @@ final class VideoProcessor: ObservableObject {
             phase = .complete
 
         } catch is CancellationError {
+            VideoImportLogger.info("processVideo cancelled")
             phase = .idle
         } catch {
+            VideoImportLogger.error("processVideo failed: \(error.localizedDescription)")
             phase = .error(error.localizedDescription)
         }
     }

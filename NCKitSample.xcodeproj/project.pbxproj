@@ -184,7 +184,7 @@
 			);
 			mainGroup = D10000;
 			packageReferences = (
-				18F8EE852FBB2B700014461A /* XCRemoteSwiftPackageReference "NCKit" */,
+				18F8EE852FBB2B700014461A /* XCLocalSwiftPackageReference "NCKit-iOS" */,
 			);
 			productRefGroup = D10099 /* Products */;
 			projectDirPath = "";
@@ -297,6 +297,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "NCKit Sample";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -326,6 +327,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "NCKit Sample";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -362,21 +364,17 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		18F8EE852FBB2B700014461A /* XCRemoteSwiftPackageReference "NCKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/5Exceptions-Mobile-Team/NCKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.1;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		18F8EE852FBB2B700014461A /* XCLocalSwiftPackageReference "NCKit-iOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../NCKit-iOS;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		18F8EE862FBB2B700014461A /* NCKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 18F8EE852FBB2B700014461A /* XCRemoteSwiftPackageReference "NCKit" */;
+			package = 18F8EE852FBB2B700014461A /* XCLocalSwiftPackageReference "NCKit-iOS" */;
 			productName = NCKit;
 		};
 /* End XCSwiftPackageProductDependency section */

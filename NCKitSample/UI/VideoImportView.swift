@@ -30,10 +30,24 @@ struct VideoImportView: View {
             .navigationBarTitleDisplayMode(.large)
             .glassNavigationChrome()
             .sheet(isPresented: $showPhotoPicker) {
-                PhotoPickerView { url in startProcessing(url: url) }
+                PhotoPickerView(
+                    onPick: { url in startProcessing(url: url) },
+                    onFailure: { message in
+                        VideoImportLogger.error("Photo picker failed: \(message)")
+                        errorMessage = message
+                        showError = true
+                    }
+                )
             }
             .sheet(isPresented: $showDocumentPicker) {
-                DocumentPickerView { url in startProcessing(url: url) }
+                DocumentPickerView(
+                    onPick: { url in startProcessing(url: url) },
+                    onFailure: { message in
+                        VideoImportLogger.error("Document picker failed: \(message)")
+                        errorMessage = message
+                        showError = true
+                    }
+                )
             }
             .navigationDestination(isPresented: $showComparison) {
                 if let result = processor.result {
@@ -86,8 +100,11 @@ struct VideoImportView: View {
                     sourceButton(
                         title: "Photo Library",
                         icon: "photo.on.rectangle",
-                        description: "Pick a video from your camera roll"
-                    ) { showPhotoPicker = true }
+                        description: "Camera roll (4K supported — may download from iCloud)"
+                    ) {
+                        VideoImportLogger.info("User tapped Photo Library")
+                        showPhotoPicker = true
+                    }
 
                     sourceButton(
                         title: "Files",
@@ -227,6 +244,7 @@ struct VideoImportView: View {
     }
 
     private func startProcessing(url: URL) {
+        VideoImportLogger.fileSummary(url: url, label: "Starting processing")
         processingTask = Task { await processor.processVideo(at: url) }
     }
 }

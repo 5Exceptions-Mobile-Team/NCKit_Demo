@@ -41,19 +41,16 @@ struct HowToUseView: View {
 
                         SnippetCard(
                             title: "3. Real-time mic processing",
-                            text: "Feed exactly processor.frameLength samples (480 = 10 ms @ 48 kHz mono). Call from a serial queue.",
+                            text: "Pass AVAudioEngine tap buffers to NCKitStreamProcessor — resampling and 480-sample framing are handled in the SDK.",
                             code: """
-                            let hop = processor.frameLength
-                            var input  = [Float](repeating: 0, count: hop)
-                            var output = [Float](repeating: 0, count: hop)
+                            import AVFoundation
 
-                            input.withUnsafeMutableBufferPointer { ib in
-                                output.withUnsafeMutableBufferPointer { ob in
-                                    processor.processFrame(
-                                        input:  ib.baseAddress!,
-                                        output: ob.baseAddress!
-                                    )
-                                }
+                            let stream = NCKitStreamProcessor(processor: processor)
+
+                            inputNode.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { buffer, _ in
+                                try stream.prepare(inputFormat: buffer.format)
+                                let frames = try stream.process(buffer: buffer)
+                                // each frame: 480 samples @ 48 kHz mono
                             }
                             """
                         )
