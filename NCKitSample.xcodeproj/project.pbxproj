@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		185AAF1D2FC6E3710040B211 /* NCKit in Frameworks */ = {isa = PBXBuildFile; productRef = 185AAF1C2FC6E3710040B211 /* NCKit */; };
+		185AAF262FC6ED300040B211 /* NCKit in Frameworks */ = {isa = PBXBuildFile; productRef = 185AAF252FC6ED300040B211 /* NCKit */; };
 		A10001 /* NCKitSampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* NCKitSampleApp.swift */; };
 		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* ContentView.swift */; };
 		A10003 /* AudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* AudioView.swift */; };
@@ -50,7 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				185AAF1D2FC6E3710040B211 /* NCKit in Frameworks */,
+				185AAF262FC6ED300040B211 /* NCKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -153,7 +153,7 @@
 			);
 			name = NCKitSample;
 			packageProductDependencies = (
-				185AAF1C2FC6E3710040B211 /* NCKit */,
+				185AAF252FC6ED300040B211 /* NCKit */,
 			);
 			productName = NCKitSample;
 			productReference = B10000 /* NCKitSample.app */;
@@ -184,7 +184,7 @@
 			);
 			mainGroup = D10000;
 			packageReferences = (
-				185AAF1B2FC6E3710040B211 /* XCRemoteSwiftPackageReference "NCKit" */,
+				185AAF242FC6ED300040B211 /* XCRemoteSwiftPackageReference "NCKit" */,
 			);
 			productRefGroup = D10099 /* Products */;
 			projectDirPath = "";
@@ -365,20 +365,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		185AAF1B2FC6E3710040B211 /* XCRemoteSwiftPackageReference "NCKit" */ = {
+		185AAF242FC6ED300040B211 /* XCRemoteSwiftPackageReference "NCKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/5Exceptions-Mobile-Team/NCKit.git";
 			requirement = {
-				kind = exactVersion;
-				version = 1.1.0;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		185AAF1C2FC6E3710040B211 /* NCKit */ = {
+		185AAF252FC6ED300040B211 /* NCKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 185AAF1B2FC6E3710040B211 /* XCRemoteSwiftPackageReference "NCKit" */;
+			package = 185AAF242FC6ED300040B211 /* XCRemoteSwiftPackageReference "NCKit" */;
 			productName = NCKit;
 		};
 /* End XCSwiftPackageProductDependency section */

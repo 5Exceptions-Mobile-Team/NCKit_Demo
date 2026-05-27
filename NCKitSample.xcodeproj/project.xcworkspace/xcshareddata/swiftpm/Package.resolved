@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/5Exceptions-Mobile-Team/NCKit.git",
       "state" : {
-        "revision" : "96bff51168d3a687e23fc021140571310390e8b8",
-        "version" : "1.1.0"
+        "revision" : "0300d43a9117eeabddb11834648e500322503bb7",
+        "version" : "1.1.1"
       }
     }
   ],
