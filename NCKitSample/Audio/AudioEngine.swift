@@ -151,7 +151,6 @@ final class AudioEngine: ObservableObject {
         outputAvailable = 0
         bufferLock.unlock()
 
-        streamProcessor?.reset()
         streamProcessor = nil
         isRunning = false
         inputLevelDb = -100
