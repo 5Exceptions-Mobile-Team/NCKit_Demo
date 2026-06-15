@@ -2,6 +2,7 @@ import AVFoundation
 import OSLog
 import PhotosUI
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 /// PHPicker wrapper for selecting videos from the photo library.
@@ -130,6 +131,105 @@ struct PhotoPickerView: UIViewControllerRepresentable {
     }
 }
 
+/// Document picker for imported audio files (WAV, M4A, MP3, …).
+struct AudioDocumentPickerView: UIViewControllerRepresentable {
+    let onPick: (URL) -> Void
+    var onFailure: ((String) -> Void)?
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let types: [UTType] = [.audio, .wav, .mp3, .mpeg4Audio, .aiff]
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onPick: onPick, onFailure: onFailure)
+    }
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: (URL) -> Void
+        let onFailure: ((String) -> Void)?
+
+        init(onPick: @escaping (URL) -> Void, onFailure: ((String) -> Void)?) {
+            self.onPick = onPick
+            self.onFailure = onFailure
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {}
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            onPick(url)
+        }
+    }
+}
+
+/// Records a new video with the device camera (iOS 15 compatible).
+struct VideoCameraRecorderView: UIViewControllerRepresentable {
+    let onPick: (URL) -> Void
+    var onFailure: ((String) -> Void)?
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.mediaTypes = [UTType.movie.identifier]
+        picker.cameraCaptureMode = .video
+        picker.videoQuality = .typeHigh
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onPick: onPick, onFailure: onFailure)
+    }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onPick: (URL) -> Void
+        let onFailure: ((String) -> Void)?
+
+        init(onPick: @escaping (URL) -> Void, onFailure: ((String) -> Void)?) {
+            self.onPick = onPick
+            self.onFailure = onFailure
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            picker.dismiss(animated: true)
+
+            guard let url = info[.mediaURL] as? URL else {
+                onFailure?("Camera did not return a video file.")
+                return
+            }
+
+            do {
+                let ext = url.pathExtension.isEmpty ? "mov" : url.pathExtension
+                let dest = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("recorded_\(UUID().uuidString).\(ext)")
+                if FileManager.default.fileExists(atPath: dest.path) {
+                    try FileManager.default.removeItem(at: dest)
+                }
+                try FileManager.default.copyItem(at: url, to: dest)
+                VideoImportLogger.fileSummary(url: dest, label: "Recorded video")
+                onPick(dest)
+            } catch {
+                onFailure?("Could not save recorded video: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+
 /// Document picker wrapper for selecting videos from Files.
 struct DocumentPickerView: UIViewControllerRepresentable {
     let onPick: (URL) -> Void
@@ -210,22 +310,17 @@ enum VideoImportLogger {
         info("\(label): path=\(path) size=\(sizeMB)")
     }
 
-    static func assetSummary(_ asset: AVURLAsset, label: String) async {
-        do {
-            let duration = try await asset.load(.duration).seconds
-            var videoLine = "no video track"
-            if let v = try await asset.loadTracks(withMediaType: .video).first {
-                let size = try await v.load(.naturalSize)
-                let fps = try await v.load(.nominalFrameRate)
-                videoLine = String(
-                    format: "%.0f×%.0f @ %.1f fps",
-                    size.width, size.height, fps
-                )
-            }
-            let audioCount = (try await asset.loadTracks(withMediaType: .audio)).count
-            info("\(label): duration=\(String(format: "%.1f", duration))s video=[\(videoLine)] audioTracks=\(audioCount)")
-        } catch {
-            warning("\(label): could not inspect asset — \(error.localizedDescription)")
+    static func assetSummary(_ asset: AVURLAsset, label: String) {
+        let duration = asset.duration.seconds
+        var videoLine = "no video track"
+        if let v = asset.tracks(withMediaType: .video).first {
+            let size = v.naturalSize
+            videoLine = String(
+                format: "%.0f×%.0f @ %.1f fps",
+                size.width, size.height, v.nominalFrameRate
+            )
         }
+        let audioCount = asset.tracks(withMediaType: .audio).count
+        info("\(label): duration=\(String(format: "%.1f", duration))s video=[\(videoLine)] audioTracks=\(audioCount)")
     }
 }

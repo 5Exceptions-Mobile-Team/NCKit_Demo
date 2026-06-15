@@ -24,6 +24,8 @@
 	<string>NCKit processes audio entirely on-device. No data is uploaded.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>NCKit Sample needs camera access to record videos for noise cancellation processing.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>NCKit Sample needs microphone access to demonstrate real-time noise cancellation. All processing happens on-device — no audio data leaves your phone.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

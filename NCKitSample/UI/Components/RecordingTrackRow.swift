@@ -54,7 +54,7 @@ struct RecordingTrackRow: View {
                     .foregroundColor(accent)
                 }
 
-                ShareLink(item: url) {
+                ShareButton(items: [url]) {
                     Label("Share", systemImage: "square.and.arrow.up")
                         .font(.subheadline.weight(.medium))
                         .foregroundColor(.white.opacity(0.85))

@@ -7,23 +7,27 @@
 
 import AVFoundation
 import SwiftUI
+import UIKit
 
 struct VideoImportView: View {
 
     @StateObject private var processor = VideoProcessor()
     @State private var showPhotoPicker = false
     @State private var showDocumentPicker = false
+    @State private var showCameraRecorder = false
     @State private var showComparison = false
     @State private var processingTask: Task<Void, Never>?
     @State private var showSaveSuccess = false
     @State private var showError = false
+    @State private var showCameraUnavailable = false
     @State private var errorMessage = ""
 
     var body: some View {
-        NavigationStack {
+        CompatibleNavigation {
             ZStack {
                 AIBackground()
                 mainContent
+                comparisonNavigationLink
                 if shouldShowOverlay { processingOverlay }
             }
             .navigationTitle("Video NC")
@@ -49,20 +53,15 @@ struct VideoImportView: View {
                     }
                 )
             }
-            .navigationDestination(isPresented: $showComparison) {
-                if let result = processor.result {
-                    ComparisonPlayerView(result: result) {
-                        Task {
-                            do {
-                                try await processor.saveToPhotos()
-                                showSaveSuccess = true
-                            } catch {
-                                errorMessage = error.localizedDescription
-                                showError = true
-                            }
-                        }
+            .fullScreenCover(isPresented: $showCameraRecorder) {
+                VideoCameraRecorderView(
+                    onPick: { url in startProcessing(url: url) },
+                    onFailure: { message in
+                        errorMessage = message
+                        showError = true
                     }
-                }
+                )
+                .ignoresSafeArea()
             }
             .alert("Saved", isPresented: $showSaveSuccess) { Button("OK") {} } message: {
                 Text("Enhanced video saved to Photos.")
@@ -70,13 +69,47 @@ struct VideoImportView: View {
             .alert("Error", isPresented: $showError) { Button("OK") {} } message: {
                 Text(errorMessage)
             }
-            .onChange(of: processor.phase) { _, newPhase in
+            .alert("Camera Unavailable", isPresented: $showCameraUnavailable) {
+                Button("OK") {}
+            } message: {
+                Text("Video recording requires a device with a camera.")
+            }
+            .onChange(of: processor.phase) { newPhase in
                 if case .complete = newPhase { showComparison = true }
                 if case .error(let msg) = newPhase {
                     errorMessage = msg
                     showError = true
                 }
             }
+        }
+    }
+
+    private var comparisonNavigationLink: some View {
+        NavigationLink(
+            destination: comparisonDestination,
+            isActive: $showComparison
+        ) {
+            EmptyView()
+        }
+        .hidden()
+    }
+
+    @ViewBuilder
+    private var comparisonDestination: some View {
+        if let result = processor.result {
+            ComparisonPlayerView(result: result) {
+                Task {
+                    do {
+                        try await processor.saveToPhotos()
+                        showSaveSuccess = true
+                    } catch {
+                        errorMessage = error.localizedDescription
+                        showError = true
+                    }
+                }
+            }
+        } else {
+            EmptyView()
         }
     }
 
@@ -97,6 +130,18 @@ struct VideoImportView: View {
                 heroText
 
                 VStack(spacing: 12) {
+                    sourceButton(
+                        title: "Record Video",
+                        icon: "video.fill",
+                        description: "Use the camera to capture a new clip"
+                    ) {
+                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                            showCameraUnavailable = true
+                            return
+                        }
+                        showCameraRecorder = true
+                    }
+
                     sourceButton(
                         title: "Photo Library",
                         icon: "photo.on.rectangle",
@@ -142,7 +187,7 @@ struct VideoImportView: View {
     private var heroText: some View {
         VStack(spacing: 6) {
             GradientText(text: "Denoise a Video", font: .title2.weight(.bold))
-            Text("NCKit extracts the audio, runs NCKit on-device, and mixes the clean track back in.")
+            Text("Record or import a video. NCKit denoises the audio on-device and mixes it back in.")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.65))
                 .multilineTextAlignment(.center)

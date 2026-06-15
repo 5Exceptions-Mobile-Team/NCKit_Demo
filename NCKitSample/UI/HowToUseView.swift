@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HowToUseView: View {
     var body: some View {
-        NavigationStack {
+        CompatibleNavigation {
             ZStack {
                 AIBackground()
 
@@ -121,7 +121,7 @@ struct HowToUseView: View {
             }
 
             HStack(spacing: 6) {
-                Pill(text: "iOS 16+", tinted: true)
+                Pill(text: "iOS 15+", tinted: true)
                 Pill(text: "Swift 5.9+")
                 Pill(text: "arm64")
                 Pill(text: "on-device")

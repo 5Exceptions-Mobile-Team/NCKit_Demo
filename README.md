@@ -5,7 +5,7 @@ Reference SwiftUI app for the [NCKit](https://github.com/5Exceptions-Mobile-Team
 ## Requirements
 
 - Xcode 15.2+
-- iOS 16.0+
+- iOS 15.0+
 - Physical device recommended (microphone, Photos)
 
 ## Run

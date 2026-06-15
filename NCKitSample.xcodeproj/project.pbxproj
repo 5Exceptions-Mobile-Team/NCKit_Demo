@@ -23,6 +23,8 @@
 		A10025 /* WavPlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* WavPlaybackController.swift */; };
 		A10026 /* DocumentExportPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* DocumentExportPicker.swift */; };
 		A10027 /* RecordingTrackRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10027 /* RecordingTrackRow.swift */; };
+		A10028 /* Compatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028 /* Compatibility.swift */; };
+		A10029 /* OfflineAudioProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029 /* OfflineAudioProcessor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +45,8 @@
 		B10025 /* WavPlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WavPlaybackController.swift; sourceTree = "<group>"; };
 		B10026 /* DocumentExportPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExportPicker.swift; sourceTree = "<group>"; };
 		B10027 /* RecordingTrackRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingTrackRow.swift; sourceTree = "<group>"; };
+		B10028 /* Compatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compatibility.swift; sourceTree = "<group>"; };
+		B10029 /* OfflineAudioProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAudioProcessor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +110,7 @@
 				B10011 /* WavWriter.swift */,
 				B10020 /* VideoProcessor.swift */,
 				B10021 /* WaveformGenerator.swift */,
+				B10029 /* OfflineAudioProcessor.swift */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -116,6 +121,7 @@
 				B10024 /* MediaPickerWrappers.swift */,
 				B10025 /* WavPlaybackController.swift */,
 				B10026 /* DocumentExportPicker.swift */,
+				B10028 /* Compatibility.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -225,6 +231,8 @@
 				A10022 /* VideoImportView.swift in Sources */,
 				A10023 /* ComparisonPlayerView.swift in Sources */,
 				A10024 /* MediaPickerWrappers.swift in Sources */,
+				A10028 /* Compatibility.swift in Sources */,
+				A10029 /* OfflineAudioProcessor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,7 +256,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -272,7 +280,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -297,7 +305,7 @@
 				INFOPLIST_FILE = NCKitSample/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "NCKit Sample";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -327,7 +335,7 @@
 				INFOPLIST_FILE = NCKitSample/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "NCKit Sample";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -370,7 +378,7 @@
 			repositoryURL = "https://github.com/5Exceptions-Mobile-Team/NCKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.1;
+				minimumVersion = 1.2.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

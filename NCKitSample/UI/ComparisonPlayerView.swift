@@ -312,7 +312,7 @@ struct ComparisonPlayerView: View {
                 .font(.caption.weight(.bold))
                 .foregroundColor(color)
             HStack(spacing: 8) {
-                ShareLink(item: shareURL) {
+                ShareButton(items: [shareURL]) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.body)
                         .foregroundColor(.white)

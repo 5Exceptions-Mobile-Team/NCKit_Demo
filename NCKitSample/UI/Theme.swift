@@ -129,12 +129,19 @@ private enum GlassChrome {
 
 private struct GlassNavigationChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
-        content
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .background(alignment: .top) {
-                StatusBarBlurStrip()
-            }
+        if #available(iOS 16.0, *) {
+            content
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+                .background(alignment: .top) {
+                    StatusBarBlurStrip()
+                }
+        } else {
+            content
+                .background(alignment: .top) {
+                    StatusBarBlurStrip()
+                }
+        }
     }
 }
 

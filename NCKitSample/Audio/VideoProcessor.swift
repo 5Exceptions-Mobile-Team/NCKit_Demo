@@ -81,14 +81,14 @@ final class VideoProcessor: ObservableObject {
             VideoImportLogger.fileSummary(url: workingURL, label: "Working copy")
 
             let asset = AVURLAsset(url: workingURL)
-            await VideoImportLogger.assetSummary(asset, label: "Input asset")
-            guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
+            VideoImportLogger.assetSummary(asset, label: "Input asset")
+            guard let audioTrack = asset.tracks(withMediaType: .audio).first else {
                 throw ProcessingError.noAudioTrack
             }
-            guard try await asset.loadTracks(withMediaType: .video).first != nil else {
+            guard asset.tracks(withMediaType: .video).first != nil else {
                 throw ProcessingError.noVideoTrack
             }
-            let duration = try await asset.load(.duration).seconds
+            let duration = asset.duration.seconds
 
             // Step 1 — Extract original audio as 48 kHz mono Float32 WAV.
             phase = .extracting
@@ -125,7 +125,7 @@ final class VideoProcessor: ObservableObject {
 
             // Step 3 — Speech-gated makeup gain via NCKit.
             let denoisedAsset = AVURLAsset(url: denoisedURL)
-            guard let dAudio = try await denoisedAsset.loadTracks(withMediaType: .audio).first else {
+            guard let dAudio = denoisedAsset.tracks(withMediaType: .audio).first else {
                 throw ProcessingError.noAudioTrack
             }
             var enhancedSamples = try await extractAudio(from: denoisedAsset, track: dAudio)
@@ -163,8 +163,18 @@ final class VideoProcessor: ObservableObject {
 
     func saveToPhotos() async throws {
         guard let url = result?.enhancedVideoURL else { return }
-        try await PHPhotoLibrary.shared().performChanges {
-            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+            }, completionHandler: { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if success {
+                    continuation.resume()
+                } else {
+                    continuation.resume(throwing: ProcessingError.writerFailed("Photos save failed"))
+                }
+            })
         }
     }
 
@@ -190,7 +200,7 @@ final class VideoProcessor: ObservableObject {
             throw ProcessingError.readerFailed(reader.error?.localizedDescription ?? "unknown")
         }
 
-        let duration = try await asset.load(.duration).seconds
+        let duration = asset.duration.seconds
         var samples = [Float]()
         samples.reserveCapacity(Int(duration * Double(sampleRate)))
 
@@ -218,10 +228,10 @@ final class VideoProcessor: ObservableObject {
         let vAsset = AVURLAsset(url: videoURL)
         let aAsset = AVURLAsset(url: audioURL)
 
-        guard let vTrack = try await vAsset.loadTracks(withMediaType: .video).first else {
+        guard let vTrack = vAsset.tracks(withMediaType: .video).first else {
             throw ProcessingError.noVideoTrack
         }
-        guard let aTrack = try await aAsset.loadTracks(withMediaType: .audio).first else {
+        guard let aTrack = aAsset.tracks(withMediaType: .audio).first else {
             throw ProcessingError.noAudioTrack
         }
 
@@ -237,8 +247,8 @@ final class VideoProcessor: ObservableObject {
             )
         else { throw ProcessingError.writerFailed("composition") }
 
-        let vDur = try await vAsset.load(.duration)
-        let aDur = try await aAsset.load(.duration)
+        let vDur = vAsset.duration
+        let aDur = aAsset.duration
         try cVideo.insertTimeRange(CMTimeRange(start: .zero, duration: vDur), of: vTrack, at: .zero)
         let audioRange = CMTimeCompare(aDur, vDur) >= 0
             ? CMTimeRange(start: .zero, duration: vDur)
@@ -253,10 +263,16 @@ final class VideoProcessor: ObservableObject {
         exporter.outputURL = outputURL
         exporter.outputFileType = .mp4
         exporter.shouldOptimizeForNetworkUse = true
-        await exporter.export()
 
-        guard exporter.status == .completed else {
-            throw ProcessingError.writerFailed(exporter.error?.localizedDescription ?? "export failed")
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            exporter.exportAsynchronously {
+                if exporter.status == .completed {
+                    continuation.resume()
+                } else {
+                    let message = exporter.error?.localizedDescription ?? "export failed"
+                    continuation.resume(throwing: ProcessingError.writerFailed(message))
+                }
+            }
         }
     }
 
